@@ -1,0 +1,68 @@
+# Git
+.git
+.gitignore
+.gitattributes
+.github
+
+# Python
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.so
+*.egg
+*.egg-info
+dist
+build
+.eggs
+.pytest_cache
+.mypy_cache
+.ruff_cache
+.coverage
+htmlcov
+.tox
+
+# Virtual environments
+venv
+env
+.venv
+ENV
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+.DS_Store
+
+# Data (use volumes instead)
+data/*
+!data/.gitkeep
+
+# Logs (use volumes instead)
+logs/*
+!logs/.gitkeep
+
+# Tests
+tests
+*.test.py
+
+# Documentation
+docs
+*.md
+!README.md
+
+# Notebooks
+notebooks
+*.ipynb
+
+# Other
+.env
+.env.*
+*.log
+tmp
+temp
+*.tmp
+*.bak
+*.backup
