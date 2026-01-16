@@ -1,0 +1,86 @@
+[
+    {
+        "id": 1,
+        "question": "Quels concerts de jazz sont prevus ce weekend a Paris ?",
+        "expected_keywords": ["concert", "jazz", "paris"],
+        "category": "recherche_simple",
+        "notes": "Test de recherche basique avec filtres musicaux et geographiques"
+    },
+    {
+        "id": 2,
+        "question": "Y a-t-il des evenements gratuits pour enfants dimanche ?",
+        "expected_keywords": ["gratuit", "enfants", "dimanche"],
+        "category": "filtres_multiples",
+        "notes": "Test de filtres multiples (prix, public, date)"
+    },
+    {
+        "id": 3,
+        "question": "Je cherche une exposition d'art contemporain a Marseille",
+        "expected_keywords": ["exposition", "art", "marseille"],
+        "category": "recherche_simple",
+        "notes": "Test de recherche culturelle avec localisation"
+    },
+    {
+        "id": 4,
+        "question": "Quels spectacles de theatre sont disponibles cette semaine ?",
+        "expected_keywords": ["theatre", "spectacle", "semaine"],
+        "category": "recherche_temporelle",
+        "notes": "Test de recherche avec contrainte temporelle"
+    },
+    {
+        "id": 5,
+        "question": "Bonjour, comment ca va ?",
+        "expected_keywords": [],
+        "category": "conversation",
+        "notes": "Test de detection conversation simple (salutation)"
+    },
+    {
+        "id": 6,
+        "question": "Merci beaucoup pour ton aide !",
+        "expected_keywords": [],
+        "category": "conversation",
+        "notes": "Test de detection conversation (remerciement)"
+    },
+    {
+        "id": 7,
+        "question": "Que faire ce soir a Marseille ?",
+        "expected_keywords": ["marseille", "soir"],
+        "category": "recherche_simple",
+        "notes": "Test de recherche locale avec temporalite"
+    },
+    {
+        "id": 8,
+        "question": "Des festivals de musique cet ete ?",
+        "expected_keywords": ["festival", "musique", "ete"],
+        "category": "recherche_temporelle",
+        "notes": "Test de recherche saisonniere"
+    },
+    {
+        "id": 9,
+        "question": "Activites culturelles gratuites le weekend",
+        "expected_keywords": ["gratuit", "culturel", "weekend"],
+        "category": "filtres_multiples",
+        "notes": "Test combinant prix et temporalite"
+    },
+    {
+        "id": 10,
+        "question": "Concerts electro ou techno a Lyon",
+        "expected_keywords": ["concert", "electro", "lyon"],
+        "category": "recherche_style",
+        "notes": "Test de recherche par genre musical"
+    },
+    {
+        "id": 11,
+        "question": "Tu peux m'aider a trouver des sorties ?",
+        "expected_keywords": [],
+        "category": "conversation",
+        "notes": "Test de detection conversation (demande d'aide generale)"
+    },
+    {
+        "id": 12,
+        "question": "Ateliers creatifs pour adultes",
+        "expected_keywords": ["atelier", "creatif", "adulte"],
+        "category": "recherche_simple",
+        "notes": "Test de recherche par type d'activite"
+    }
+]

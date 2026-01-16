@@ -1,24 +1,18 @@
-# 🎭 RAG Events Assistant - Assistant Intelligent Événements
+# 🎭 RAG Events Assistant
 
-Assistant conversationnel intelligent basé sur RAG (Retrieval-Augmented Generation) pour découvrir des événements culturels via des questions en langage naturel.
+Assistant conversationnel intelligent pour découvrir des événements culturels via des questions en langage naturel.
 
-**Stack**: Streamlit + LangChain + Mistral AI + FAISS + Python 3.11+
+**Stack** : Python 3.11+ | Streamlit | FAISS | Mistral AI | FastAPI
 
 ---
 
-## 📋 Vue d'ensemble
+## 🎯 Fonctionnalités
 
-Ce projet implémente un chatbot RAG qui :
-- 🔍 Récupère des événements culturels depuis l'API Open Agenda
-- 🧠 Indexe les événements avec des embeddings vectoriels (FAISS)
-- 💬 Répond à des questions en langage naturel via Mistral AI
-- 🎨 Propose une interface Streamlit intuitive
-- 🌐 Expose une API REST (optionnel)
-
-### Métriques cibles
-- ✅ Pertinence réponses > 80%
-- ✅ Temps de réponse < 3 secondes
-- ✅ Couverture questions > 70%
+- 💬 **Chatbot conversationnel** avec mémoire (5 derniers échanges)
+- 🧠 **Détection intelligente** : distingue conversation simple vs recherche d'événements
+- 🔍 **Recherche sémantique** via embeddings Mistral + FAISS
+- 🎨 **Interface moderne** Streamlit avec thème sombre
+- 🌐 **API REST** FastAPI avec gestion de sessions
 
 ---
 
@@ -26,302 +20,151 @@ Ce projet implémente un chatbot RAG qui :
 
 ### Prérequis
 
-- Python 3.11 ou supérieur
-- [uv](https://github.com/astral-sh/uv) (gestionnaire de paquets moderne)
-- Clé API Mistral AI ([obtenir ici](https://console.mistral.ai/))
-- Clé API Open Agenda (optionnel, [obtenir ici](https://openagenda.com/))
+- Python 3.11+
+- [uv](https://github.com/astral-sh/uv)
+- Clé API [Mistral AI](https://console.mistral.ai/)
 
 ### Installation
 
-1. **Cloner le repository**
 ```bash
+# Cloner le repo
 git clone <repository-url>
 cd OC7---Projet-RAG-Assistant-Intelligent-Events
-```
 
-2. **Installer uv** (si pas déjà installé)
-```bash
-# macOS/Linux
-curl -LsSf https://astral.sh/uv/install.sh | sh
+# Installer les dépendances
+uv sync --all-extras
 
-# ou avec Homebrew
-brew install uv
-```
-
-3. **Créer le fichier .env**
-```bash
+# Configurer l'environnement
 cp .env.example .env
-# Éditer .env et ajouter vos clés API
+# Ajouter MISTRAL_API_KEY dans .env
 ```
 
-4. **Installer les dépendances**
-```bash
-# Installation complète (dev + api)
-uv sync --extra dev --extra api
+### Préparer les données
 
-# Ou seulement les dépendances principales
-uv sync
-```
-
-5. **Vérifier l'installation**
-```bash
-uv run python -c "import langchain; import faiss; import streamlit; print('✅ Installation OK')"
-```
-
----
-
-## 📊 Structure du projet
-
-```
-.
-├── src/                        # Code source (pattern src-layout)
-│   ├── config/                 # Configuration
-│   │   ├── settings.py         # Paramètres (Pydantic)
-│   │   └── constants.py        # Constantes
-│   ├── data/                   # Accès données
-│   │   ├── models.py           # Modèles Pydantic
-│   │   ├── fetcher.py          # Client API Open Agenda
-│   │   └── preprocessor.py     # Nettoyage données
-│   ├── rag/                    # Logique RAG
-│   │   ├── chatbot.py          # Orchestrateur principal
-│   │   ├── retriever.py        # Recherche vectorielle
-│   │   ├── generator.py        # Génération LLM
-│   │   ├── embeddings.py       # Gestion embeddings
-│   │   ├── prompts.py          # Templates prompts
-│   │   └── index_manager.py    # Opérations FAISS
-│   ├── api/                    # API REST (FastAPI)
-│   ├── ui/                     # Composants UI
-│   └── utils/                  # Utilitaires
-│
-├── scripts/                    # Scripts autonomes
-│   ├── fetch_events.py         # Récupération événements
-│   ├── build_index.py          # Construction index FAISS
-│   └── evaluate_rag.py         # Évaluation système
-│
-├── tests/                      # Tests (unit/integration/e2e)
-├── data/                       # Données (non versionné)
-├── docs/                       # Documentation
-├── notebooks/                  # Notebooks Jupyter
-└── app.py                      # Application Streamlit
-```
-
----
-
-## 🎯 Utilisation
-
-### 1. Récupérer les événements
+Exécuter les notebooks dans l'ordre :
 
 ```bash
-uv run python scripts/fetch_events.py --location paris --max-events 1000
+uv run jupyter lab
 ```
 
-### 2. Construire l'index vectoriel
+1. `01_data_collection.ipynb` - Récupération des événements
+2. `02_data_preprocessing.ipynb` - Nettoyage des données
+3. `03_create_embeddings.ipynb` - Création des embeddings
+4. `04_build_faiss_index.ipynb` - Construction de l'index FAISS
+
+### Lancer l'application
 
 ```bash
-uv run python scripts/build_index.py --input data/processed/events.json
-```
-
-### 3. Lancer l'application Streamlit
-
-```bash
+# Interface Streamlit
 uv run streamlit run app.py
-```
 
-Accéder à l'interface : [http://localhost:8501](http://localhost:8501)
-
-### 4. Lancer l'API REST (optionnel)
-
-```bash
+# API REST
 uv run uvicorn src.api.main:app --reload
 ```
 
-Documentation API : [http://localhost:8000/docs](http://localhost:8000/docs)
+- Streamlit : http://localhost:8501
+- API docs : http://localhost:8000/docs
 
 ---
 
-## 🧪 Tests
+## 📁 Structure
 
-### Exécuter tous les tests
-```bash
-uv run pytest
 ```
-
-### Tests avec couverture
-```bash
-uv run pytest --cov=src --cov-report=html
-```
-
-### Tests spécifiques
-```bash
-# Tests unitaires uniquement
-uv run pytest tests/unit/
-
-# Tests d'intégration
-uv run pytest tests/integration/ -m integration
-
-# Exclure les tests lents
-uv run pytest -m "not slow"
-```
-
-### Évaluation du système RAG
-```bash
-uv run python scripts/evaluate_rag.py --test-file tests/data/test_questions.json
+├── app.py                  # Chatbot Streamlit
+├── src/
+│   ├── config/
+│   │   ├── settings.py     # Configuration (Pydantic Settings)
+│   │   └── constants.py    # Constantes
+│   ├── rag/
+│   │   └── engine.py       # Moteur RAG (recherche + génération)
+│   └── api/
+│       └── main.py         # API FastAPI
+├── notebooks/              # Préparation des données
+├── data/
+│   └── processed/          # Index FAISS + documents
+└── tests/
 ```
 
 ---
 
-## 🐳 Docker
+## 🔌 API Endpoints
 
-### Build et run avec Docker Compose
+| Méthode  | Endpoint        | Description          |
+| -------- | --------------- | -------------------- |
+| `GET`    | `/health`       | État de l'API        |
+| `POST`   | `/search`       | Recherche sémantique |
+| `POST`   | `/chat`         | Chat avec mémoire    |
+| `GET`    | `/session/{id}` | Historique session   |
+| `DELETE` | `/session/{id}` | Effacer session      |
 
-```bash
-# Construire et démarrer
-docker-compose up -d
-
-# Voir les logs
-docker-compose logs -f
-
-# Arrêter
-docker-compose down
-```
-
-### Build manuel
+### Exemple
 
 ```bash
-# Construire l'image
-docker build -t rag-events-assistant .
+# Premier message (crée une session)
+curl -X POST http://localhost:8000/chat \
+  -H "Content-Type: application/json" \
+  -d '{"query": "concerts jazz à Paris"}'
 
-# Exécuter le container
-docker run -p 8501:8501 \
-  -e MISTRAL_API_KEY=$MISTRAL_API_KEY \
-  -v $(pwd)/data:/app/data \
-  rag-events-assistant
+# Continuer la conversation
+curl -X POST http://localhost:8000/chat \
+  -H "Content-Type: application/json" \
+  -d '{"query": "et à Marseille ?", "session_id": "<id-retourné>"}'
 ```
 
 ---
 
 ## ⚙️ Configuration
 
-Toutes les configurations se font via le fichier `.env`. Voir `.env.example` pour la liste complète des variables.
+Variables d'environnement (`.env`) :
 
-### Variables principales
+| Variable             | Description                          | Défaut                 |
+| -------------------- | ------------------------------------ | ---------------------- |
+| `MISTRAL_API_KEY`    | Clé API Mistral                      | **Requis**             |
+| `EMBEDDING_PROVIDER` | `mistral` ou `sentence-transformers` | `mistral`              |
+| `LLM_MODEL`          | Modèle LLM                           | `mistral-small-latest` |
+| `LLM_TEMPERATURE`    | Température                          | `0.7`                  |
+| `TOP_K_RESULTS`      | Résultats par recherche              | `5`                    |
 
-| Variable | Description | Valeur par défaut |
-|----------|-------------|-------------------|
-| `MISTRAL_API_KEY` | Clé API Mistral AI | **Requis** |
-| `OPENAGENDA_API_KEY` | Clé API Open Agenda | Optionnel |
-| `EMBEDDING_MODEL` | Modèle d'embeddings | `all-MiniLM-L6-v2` |
-| `LLM_MODEL` | Modèle Mistral | `mistral-small-latest` |
-| `LLM_TEMPERATURE` | Température LLM | `0.3` |
-| `TOP_K_RESULTS` | Nombre de résultats | `5` |
-| `LOG_LEVEL` | Niveau de logging | `INFO` |
+---
+
+## 🧪 Tests
+
+```bash
+# Tous les tests
+uv run pytest
+
+# Avec couverture
+uv run pytest --cov=src --cov-report=html
+```
 
 ---
 
 ## 🛠️ Développement
 
-### Installation des outils de développement
-
 ```bash
-uv sync --extra dev
-```
+# Formatage
+uv run black src tests
 
-### Linting et formatage
+# Linting
+uv run ruff check src tests
 
-```bash
-# Formatter le code avec Black
-uv run black src tests scripts
-
-# Linting avec Ruff
-uv run ruff check src tests scripts
-
-# Type checking avec mypy
+# Type checking
 uv run mypy src
 ```
-
-### Pre-commit hooks
-
-```bash
-uv run pre-commit install
-uv run pre-commit run --all-files
-```
-
-### Jupyter notebooks
-
-```bash
-# Lancer JupyterLab
-uv run jupyter lab
-
-# Ou Jupyter Notebook
-uv run jupyter notebook
-```
-
----
-
-## 📚 Documentation
-
-- [Architecture](docs/architecture.md) - Architecture système
-- [API Reference](docs/api_reference.md) - Documentation API
-- [Deployment](docs/deployment.md) - Guide de déploiement
-- [Troubleshooting](docs/troubleshooting.md) - Résolution de problèmes
-- [Guide complet](Guide%20complet%20projet%20RAG.md) - Guide détaillé du projet
-
----
-
-## 🎯 Roadmap
-
-### Phase 1: MVP (Semaines 1-2) ✅
-- [x] Structure du projet
-- [ ] Pipeline de données
-- [ ] Système RAG de base
-- [ ] Interface Streamlit
-- [ ] Tests et évaluation
-
-### Phase 2: Amélioration (Semaines 3-4)
-- [ ] Optimisation performances
-- [ ] API REST complète
-- [ ] Tests end-to-end
-- [ ] Documentation complète
-- [ ] Déploiement
-
-### Phase 3: Extensions (Futur)
-- [ ] Support multi-villes
-- [ ] Filtres avancés
-- [ ] Personnalisation utilisateur
-- [ ] Historique conversations
-- [ ] Système de réservation
-
----
-
-## 🤝 Contribution
-
-Les contributions sont les bienvenues ! Veuillez :
-1. Fork le projet
-2. Créer une branche (`git checkout -b feature/AmazingFeature`)
-3. Commit les changements (`git commit -m 'Add AmazingFeature'`)
-4. Push vers la branche (`git push origin feature/AmazingFeature`)
-5. Ouvrir une Pull Request
 
 ---
 
 ## 📝 License
 
-Ce projet est sous licence MIT. Voir le fichier [LICENSE](LICENSE) pour plus de détails.
+MIT
 
----
+## TO DO
 
-## 🙏 Remerciements
-
-- [Mistral AI](https://mistral.ai/) - LLM
-- [LangChain](https://python.langchain.com/) - Framework RAG
-- [Open Agenda](https://openagenda.com/) - Données événements
-- [FAISS](https://github.com/facebookresearch/faiss) - Recherche vectorielle
-- [Streamlit](https://streamlit.io/) - Interface web
-
----
-
-## 📧 Contact
-
-Pierre - [GitHub](https://github.com/ppluton)
-
-Lien du projet: [https://github.com/ppluton/OC7---Projet-RAG-Assistant-Intelligent-Events](https://github.com/ppluton/OC7---Projet-RAG-Assistant-Intelligent-Events)
+- Gerer l'application contre les Injection SQL
+- Gerer le build
+- Un endpoint/rebuild(GET ou POST) pour reconstruire la base vectorielle à la demande
+- Une documentation Swagger générée automatiquement (si FastAPI est utilisé)
+- Implementation de Ragas
+- Un test fonctionnel de l’API dans un script ou fichierapi_test.py
+- Creer les test unitaire et fonctionnels
+- comprendre Flask et voir les differences pour implementation

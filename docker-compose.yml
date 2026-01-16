@@ -1,0 +1,84 @@
+# =============================================================================
+# RAG Events Assistant - Docker Compose
+# =============================================================================
+# Orchestration des services API et Streamlit
+#
+# Usage:
+#   docker-compose up -d          # Demarrer tous les services
+#   docker-compose up api         # Demarrer uniquement l'API
+#   docker-compose up streamlit   # Demarrer uniquement Streamlit
+#   docker-compose logs -f        # Voir les logs
+#   docker-compose down           # Arreter les services
+#
+# Variables d'environnement requises (dans .env):
+#   - MISTRAL_API_KEY: Cle API Mistral (obligatoire)
+#   - REBUILD_API_KEY: Cle pour l'endpoint /rebuild (optionnel)
+# =============================================================================
+
+services:
+  # ===========================================================================
+  # API FastAPI
+  # ===========================================================================
+  api:
+    build:
+      context: .
+      target: production
+    container_name: rag-events-api
+    ports:
+      - "8000:8000"
+    environment:
+      - MISTRAL_API_KEY=${MISTRAL_API_KEY}
+      - REBUILD_API_KEY=${REBUILD_API_KEY:-}
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+      - EMBEDDING_PROVIDER=${EMBEDDING_PROVIDER:-mistral}
+      - LLM_MODEL=${LLM_MODEL:-mistral-small-latest}
+      - LLM_TEMPERATURE=${LLM_TEMPERATURE:-0.7}
+      - TOP_K_RESULTS=${TOP_K_RESULTS:-5}
+    volumes:
+      - ./data:/app/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      start_period: 10s
+      retries: 3
+    restart: unless-stopped
+    networks:
+      - rag-network
+
+  # ===========================================================================
+  # Interface Streamlit
+  # ===========================================================================
+  streamlit:
+    build:
+      context: .
+      target: production
+    container_name: rag-events-streamlit
+    command: ["streamlit"]
+    ports:
+      - "8501:8501"
+    environment:
+      - MISTRAL_API_KEY=${MISTRAL_API_KEY}
+      - EMBEDDING_PROVIDER=${EMBEDDING_PROVIDER:-mistral}
+      - LLM_MODEL=${LLM_MODEL:-mistral-small-latest}
+      - LLM_TEMPERATURE=${LLM_TEMPERATURE:-0.7}
+      - TOP_K_RESULTS=${TOP_K_RESULTS:-5}
+    volumes:
+      - ./data:/app/data
+    depends_on:
+      api:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - rag-network
+
+networks:
+  rag-network:
+    driver: bridge
+
+# =============================================================================
+# Volumes (optionnel, pour persistance explicite)
+# =============================================================================
+# volumes:
+#   data-volume:
+#     driver: local
