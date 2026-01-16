@@ -6,9 +6,34 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 This is a RAG (Retrieval-Augmented Generation) chatbot for discovering cultural events using natural language queries. The system retrieves events from the Open Agenda API, indexes them with FAISS vector embeddings, and uses Mistral AI to generate conversational responses.
 
-**Stack**: Python 3.11+, Streamlit (UI), LangChain (RAG), Mistral AI (LLM), FAISS (vector store), Open Agenda API (data)
+**Stack**: Python 3.11+, Streamlit (UI), Mistral AI (LLM + Embeddings), FAISS (vector store), FastAPI (REST API), Open Agenda API (data)
 
 **Package Manager**: This project uses `uv` (not pip). All dependency management and script execution should be done through `uv`.
+
+**Architecture**: Direct SDK integration (Mistral AI, FAISS) - NOT LangChain. Consolidated RAGEngine for all RAG operations.
+
+## Implementation Status
+
+✅ **Fully Implemented**:
+- Core RAG pipeline with query classification (RAGEngine, IndexBuilder)
+- Mistral AI integration (LLM + embeddings) with sentence-transformers fallback
+- FAISS vector store with metadata persistence
+- FastAPI REST API with session management and background tasks
+- Streamlit chat interface with modern dark theme
+- Complete test suite (unit, integration, e2e)
+- Docker containerization with multi-mode support
+- RAGAS evaluation framework
+- Comprehensive documentation
+
+📓 **Jupyter Notebook-based**:
+- Data collection from Open Agenda API
+- Data preprocessing and cleaning
+- Index building and experimentation
+
+⚠️ **Architectural Notes**:
+- No separate retriever/generator/embeddings modules - consolidated in RAGEngine
+- No standalone scripts for data pipeline - handled via notebooks + API `/rebuild` endpoint
+- UI in root `app.py`, not `src/ui/` directory
 
 ## Common Commands
 
@@ -29,17 +54,20 @@ uv sync --all-extras         # Everything
 
 ### Development Workflow
 ```bash
-# 1. Fetch events from Open Agenda API
-uv run python scripts/fetch_events.py --location paris --max-events 1000
+# 1. Fetch events and build index using Jupyter notebooks
+uv run jupyter lab  # Run notebooks/01_data_collection.ipynb through 04_build_faiss_index.ipynb
 
-# 2. Build FAISS vector index
-uv run python scripts/build_index.py --input data/processed/events.json
+# OR use the FastAPI rebuild endpoint:
+# POST http://localhost:8000/rebuild with events data
 
-# 3. Run Streamlit application
+# 2. Run Streamlit application
 uv run streamlit run app.py
 
-# 4. Run FastAPI server (if implemented)
+# 3. Run FastAPI server
 uv run uvicorn src.api.main:app --reload
+
+# 4. Test API endpoints
+uv run python scripts/api_test.py
 ```
 
 ### Testing
@@ -84,48 +112,107 @@ uv run jupyter lab
 uv run jupyter notebook
 ```
 
+### FastAPI Endpoints
+The REST API (`src/api/main.py`) provides the following endpoints:
+
+```bash
+# Health check
+GET /health
+
+# Semantic search (no session)
+POST /search
+Body: {"query": "concerts ce weekend", "top_k": 5}
+
+# Chat with session management
+POST /chat
+Body: {"query": "salut", "session_id": "optional-id"}
+
+# Get session history
+GET /session/{session_id}
+
+# Delete session
+DELETE /session/{session_id}
+
+# Rebuild FAISS index (background task with progress tracking)
+POST /rebuild
+Headers: X-API-Key: <REBUILD_API_KEY>
+Body: {"events": [...], "use_mistral_embeddings": true}
+```
+
 ## Architecture
 
 ### RAG Pipeline Flow
 ```
-User Query → Streamlit UI → RAG Chatbot → FAISS Retriever (top-k events)
+User Query → Streamlit UI / FastAPI → RAGEngine
+                                          ↓
+                                    Query Classification
+                                    (needs_rag() check)
+                                          ↓
+                        ┌─────────────────┴─────────────────┐
+                        ↓                                   ↓
+                   CHAT Mode                          SEARCH Mode (RAG)
+            (conversation_response)                         ↓
+                        ↓                          1. Encode query (Mistral/ST)
+                Simple LLM chat                    2. FAISS semantic search (top-k)
+                  (no context)                     3. Generate response with context
+                        ↓                                   ↓
+                        └───────────────┬─────────────────┘
                                         ↓
-                                   LangChain Chain
-                                        ↓
-                                   Mistral LLM (with context)
-                                        ↓
-                                   Response + Sources
+                              Response + Sources (if RAG)
 ```
 
 ### Module Organization
 
 **src-layout pattern**: All source code lives in `src/` to avoid import issues.
 
-- **src/config/**: Configuration management
-  - `settings.py`: Pydantic Settings for environment variables (validates all config on load)
-  - `constants.py`: Application constants (paths, prompts, thresholds, model names)
+- **src/config/**: ✅ Configuration management (fully implemented)
+  - `settings.py`: Pydantic Settings with environment variable validation
+    - API keys (MISTRAL_API_KEY, REBUILD_API_KEY, OPENAGENDA_API_KEY)
+    - Embedding provider selection (mistral vs sentence-transformers)
+    - LLM configuration (model, temperature, max_tokens)
+    - Retrieval settings (top_k_results, min_similarity_score)
+    - API and Streamlit configuration
+  - `constants.py`: Application constants
+    - Project paths (DATA_DIR, INDEXES_DIR, etc.)
+    - Model names (MISTRAL_MODELS, EMBEDDING_MODELS)
+    - Prompt templates (SYSTEM_PROMPT_TEMPLATE)
+    - Validation constants and metrics thresholds
+    - Event categories and file names
 
 - **src/data/**: Data models and access
-  - `models.py`: Pydantic models for Event, Location, DateRange, QueryResponse, etc.
-  - `fetcher.py`: Client for Open Agenda API (to be implemented)
-  - `preprocessor.py`: Data cleaning and HTML stripping (to be implemented)
+  - `models.py`: ✅ Pydantic models for Event, Location, DateRange, QueryResponse, EvaluationQuestion, EvaluationResult
+  - Data fetching and preprocessing handled via Jupyter notebooks (`notebooks/01_data_collection.ipynb`, `notebooks/02_data_preprocessing.ipynb`)
 
 - **src/rag/**: Core RAG logic
-  - `chatbot.py`: Main chatbot orchestrator (EventChatbot class)
-  - `retriever.py`: FAISS vector search wrapper (to be implemented)
-  - `generator.py`: LLM generation logic (to be implemented)
-  - `embeddings.py`: Embedding model management (to be implemented)
-  - `prompts.py`: Prompt templates (to be implemented)
-  - `index_manager.py`: FAISS index operations (to be implemented)
+  - `engine.py`: ✅ Complete RAG pipeline implementation (RAGEngine class)
+    - Query classification (`needs_rag()`) - Distinguishes SEARCH vs CHAT queries
+    - Conversational responses (`conversation_response()`) - Non-RAG chat handling
+    - Embedding generation (`encode_query()`) - Mistral or SentenceTransformers support
+    - Semantic search (`search()`) - FAISS vector retrieval
+    - Response generation (`generate_response()`) - LLM with retrieved context
+    - Unified chat interface (`chat()`) - Complete pipeline with automatic RAG detection
+  - `index_builder.py`: ✅ FAISS index construction (IndexBuilder class)
+    - Document loading, batch embedding generation, index building with L2 normalization
+    - Metadata persistence, progress tracking, supports both Mistral and SentenceTransformers embeddings
 
-- **src/api/**: FastAPI REST endpoints (optional)
-- **src/ui/**: Streamlit UI components (to be implemented)
-- **src/utils/**: Shared utilities (logging, caching, etc.)
+- **src/api/**: ✅ FastAPI REST API (fully implemented)
+  - `main.py`: Complete REST API with health checks, search, chat with session memory, and background index rebuilding
+
+- **src/ui/**: UI implemented in root-level `app.py` (Streamlit)
+  - Modern dark theme with chat interface, message history (max 5), sidebar controls, and streaming responses
+
+- **src/utils/**: Minimal utilities (only `__init__.py`)
 
 - **scripts/**: Standalone executable scripts
-  - `fetch_events.py`: Fetch events from Open Agenda
-  - `build_index.py`: Build FAISS index from events
-  - `evaluate_rag.py`: Evaluate RAG system performance
+  - `evaluate_rag.py`: ✅ Complete RAG evaluation framework with RAGAS integration, keyword coverage metrics, and JSON report generation
+  - `api_test.py`: ✅ API testing utilities
+
+- **notebooks/**: Jupyter notebooks for data pipeline
+  - `01_data_collection.ipynb`: Event fetching from Open Agenda API
+  - `02_data_preprocessing.ipynb`: Data cleaning and HTML stripping
+  - `03_create_embeddings_mistral.ipynb`: Embedding generation with Mistral
+  - `04_build_faiss_index.ipynb`: FAISS index construction
+  - `05_rag_chatbot_mistral.ipynb`: RAG experimentation and testing
 
 - **tests/**: Test suite organized by type (unit, integration, e2e)
 
@@ -138,9 +225,9 @@ User Query → Streamlit UI → RAG Chatbot → FAISS Retriever (top-k events)
    - `.to_display_dict()`: Formats event for UI display
    - `.is_free`, `.is_upcoming`, `.is_past`, `.is_ongoing`: Computed properties
 
-3. **Vector Store**: FAISS with HuggingFace embeddings (sentence-transformers). Default model: `all-MiniLM-L6-v2` (384 dimensions, fast).
+3. **Vector Store**: FAISS with direct integration. Default embedding provider: **Mistral** (`mistral-embed`, 1024 dimensions). Also supports sentence-transformers (`paraphrase-multilingual-mpnet-base-v2`, 768 dimensions) via settings.
 
-4. **LLM Integration**: LangChain + Mistral AI using `ChatMistralAI`. Default model: `mistral-small-latest` with temperature 0.3.
+4. **LLM Integration**: Direct Mistral SDK integration (NOT LangChain). Uses Mistral client with `mistral-small-latest` model, temperature 0.7, streaming support.
 
 5. **Testing Strategy**:
    - Uses pytest with custom markers (slow, integration, e2e, requires_api)
@@ -149,35 +236,46 @@ User Query → Streamlit UI → RAG Chatbot → FAISS Retriever (top-k events)
 
 ## Critical Implementation Details
 
-### LangChain Imports (IMPORTANT)
-**Always use the modern imports from `langchain_community`, not the deprecated `langchain` imports:**
+### Architecture Note: Direct Integration (NOT LangChain)
+**This project uses direct SDK integration, NOT LangChain:**
 
 ```python
-# ✅ CORRECT
-from langchain_community.vectorstores import FAISS
-from langchain_community.embeddings import HuggingFaceEmbeddings
-from langchain_mistralai import ChatMistralAI
+# ✅ CORRECT - What this project uses
+from mistralai import Mistral
+import faiss
+from sentence_transformers import SentenceTransformer
 
-# ❌ WRONG (deprecated)
-from langchain.vectorstores import FAISS
-from langchain.embeddings import HuggingFaceEmbeddings
+# ❌ NOT USED - LangChain components are NOT in this project
+# from langchain_community.vectorstores import FAISS
+# from langchain_mistralai import ChatMistralAI
 ```
 
-### FAISS Deserialization
-When loading FAISS indexes, you must set `allow_dangerous_deserialization=True`:
+### FAISS Index Management
+FAISS indexes are managed through the `IndexBuilder` class with pickle serialization:
 
 ```python
-vectorstore = FAISS.load_local(
-    "data/indexes/faiss_index",
-    embeddings,
-    allow_dangerous_deserialization=True  # Required
-)
+# Loading a FAISS index
+index = faiss.read_index(str(index_path / "index.faiss"))
+with open(index_path / "index.pkl", "rb") as f:
+    metadata = pickle.load(f)
+```
+
+### Embedding Provider Selection
+The project supports two embedding providers via `settings.embedding_provider`:
+
+```python
+# Mistral embeddings (DEFAULT)
+embedding_provider = "mistral"  # Uses mistral-embed (1024 dim)
+
+# Sentence Transformers
+embedding_provider = "sentence-transformers"  # Uses paraphrase-multilingual-mpnet-base-v2 (768 dim)
 ```
 
 ### API Keys
-- MISTRAL_API_KEY: Required for LLM
-- OPENAGENDA_API_KEY: May be required for API access
-- Both should be in `.env` file (never commit to git)
+- **MISTRAL_API_KEY**: Required for LLM and Mistral embeddings
+- **REBUILD_API_KEY**: Optional authentication for the `/rebuild` endpoint
+- **OPENAGENDA_API_KEY**: May be required for Open Agenda API access
+- All keys should be in `.env` file (never commit to git)
 - Access via: `from src.config.settings import settings; settings.mistral_api_key`
 
 ### Prompt Template
@@ -222,25 +320,63 @@ When implementing new features:
 
 ## Docker
 
-The project is designed to be containerized:
-- Dockerfile should use Python 3.11 slim base
-- MISTRAL_API_KEY must be passed as environment variable
-- Mount `data/` volume for persistence
-- Expose ports 8501 (Streamlit) and 8000 (FastAPI)
+✅ **Fully implemented** with multi-stage build and dual-mode support:
+
+### Docker Setup
+```bash
+# Build image
+docker build -t events-assistant .
+
+# Run Streamlit (default)
+docker run -p 8501:8501 --env-file .env -v $(pwd)/data:/app/data events-assistant
+
+# Run FastAPI
+docker run -p 8000:8000 --env-file .env -v $(pwd)/data:/app/data events-assistant api
+
+# Using docker-compose
+docker-compose up              # Starts both API and Streamlit services
+docker-compose up api          # Only API
+docker-compose up streamlit    # Only Streamlit
+```
+
+### Features
+- Multi-stage build (base → dependencies → production)
+- Python 3.11-slim base image
+- Uses `uv` for dependency management
+- Environment variable configuration (MISTRAL_API_KEY required)
+- Volume mounting for `data/` persistence
+- Built-in healthcheck
+- Supports both Streamlit (8501) and FastAPI (8000) modes
 
 ## Performance Considerations
 
-1. **Streamlit caching**: Use `@st.cache_resource` for chatbot initialization
-2. **FAISS index size**: ~2GB RAM for 1000 events with 384-dim embeddings
-3. **Batch processing**: Use `DEFAULT_BATCH_SIZE = 32` for embedding generation
+1. **Streamlit caching**: RAGEngine initialization uses `@st.cache_resource` for persistence across sessions
+2. **FAISS index size**: Varies by embedding provider
+   - Mistral embeddings: ~1024 dims × number of events
+   - Sentence Transformers: ~768 dims × number of events
+3. **Batch processing**: `DEFAULT_BATCH_SIZE = 32` for embedding generation (configurable in constants)
 4. **API rate limits**: Respect Open Agenda and Mistral API rate limits
-5. **Embedding model**: `all-MiniLM-L6-v2` is chosen for speed over accuracy (POC priority)
+5. **Embedding model**: Default `mistral-embed` for quality multilingual support; `paraphrase-multilingual-mpnet-base-v2` available as alternative
+6. **Query classification**: `needs_rag()` method reduces unnecessary FAISS searches for conversational queries
+7. **Session memory**: Both API and Streamlit maintain conversation history (MAX_HISTORY = 5 messages)
 
-## Known Limitations (POC Phase)
+## Additional Documentation
 
-- No conversation history/memory
-- Manual index updates (no auto-refresh)
-- Single location support (Paris-focused)
-- No user authentication
-- In-memory only (no database persistence)
-- French language only
+Comprehensive documentation is available in the `docs/` directory:
+
+- **ARCHITECTURE.md**: Detailed system architecture and design decisions
+- **COMPRENDRE_LE_RAG.md**: RAG concepts explained (in French)
+- **GUIDE_DEMARRAGE.md**: Getting started guide (in French)
+- **REFERENCE_API.md**: Complete API reference
+- **Guide complet projet RAG.md**: Full project guide (in French)
+- **guide-pyproject-toml.md**: pyproject.toml configuration guide
+
+## Known Limitations
+
+- **Manual index updates**: No automatic refresh from Open Agenda API (must use notebooks or `/rebuild` endpoint)
+- **Limited conversation memory**: Only stores last 5 messages per session (configurable via MAX_HISTORY)
+- **Default location**: Configured for Marseille (changeable via settings.default_location)
+- **No user authentication**: API and Streamlit are open access
+- **In-memory session storage**: API sessions stored in memory (lost on restart, no database persistence)
+- **French language only**: All prompts and responses are in French
+- **No conversation context across RAG/CHAT modes**: Mode switching doesn't preserve full conversation semantics
