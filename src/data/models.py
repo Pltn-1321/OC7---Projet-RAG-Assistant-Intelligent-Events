@@ -27,7 +27,10 @@ class Location(BaseModel):
     @classmethod
     def validate_city(cls, v: str) -> str:
         """Validate and clean city name."""
-        return v.strip().title()
+        cleaned = v.strip()
+        if not cleaned:
+            raise ValueError("City name cannot be empty or whitespace-only")
+        return cleaned.title()
 
 
 class DateRange(BaseModel):

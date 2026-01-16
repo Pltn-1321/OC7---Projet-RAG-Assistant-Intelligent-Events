@@ -18,7 +18,7 @@ class TestRAGEngineInitialization:
         nonexistent_path = tmp_path / "nonexistent"
         with pytest.raises(FileNotFoundError) as exc_info:
             RAGEngine(index_dir=nonexistent_path)
-        assert "Index FAISS non trouve" in str(exc_info.value)
+        assert "Index FAISS non trouvé" in str(exc_info.value)
 
     def test_missing_documents_raises_error(self, tmp_path, mock_faiss_index):
         """Test que des documents manquants levent FileNotFoundError."""
@@ -35,7 +35,7 @@ class TestRAGEngineInitialization:
                 index_dir=mock_faiss_index,
                 documents_path=tmp_path / "missing_documents.json",
             )
-        assert "Documents non trouves" in str(exc_info.value)
+        assert "Documents non trouvés" in str(exc_info.value)
 
     @pytest.mark.requires_api
     def test_engine_loads_successfully(self):
