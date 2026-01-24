@@ -269,7 +269,7 @@ Je suis ton assistant événements culturels ! Je peux t'aider à trouver :
 
 **Pose-moi n'importe quelle question** sur les événements culturels et je te donnerai les meilleures recommandations basées sur tes intérêts !
 
-*Exemple :* *"Quels concerts de jazz sont prévus à Paris ce week-end ?"*
+*Exemple :* *"Quels concerts de jazz sont prévus à Marseille ce week-end ?"*
 """,
         }
     )

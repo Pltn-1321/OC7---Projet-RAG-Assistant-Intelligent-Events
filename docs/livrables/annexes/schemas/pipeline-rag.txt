@@ -1,0 +1,90 @@
+┌─────────────────────────────────────────────────────────────────┐
+│                      PIPELINE RAG                                │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                  │
+│  Question utilisateur                                            │
+│       ↓                                                          │
+│  Classification intelligente (needs_rag)                         │
+│       ↓                                                          │
+│  ┌────────────────────┬────────────────────┐                    │
+│  │                    │                    │                    │
+│  │   CHAT Mode        │   SEARCH Mode      │                    │
+│  │   (Simple LLM)     │   (RAG Pipeline)   │                    │
+│  │                    │                    │                    │
+│  │   ↓                │   ↓                │                    │
+│  │   Conversation     │   1. Embedding     │                    │
+│  │   directe          │      (Mistral)     │                    │
+│  │   (Mistral LLM)    │   2. FAISS Search  │                    │
+│  │                    │      (top-k=5)     │                    │
+│  │                    │   3. LLM + Context │                    │
+│  │                    │      (Mistral)     │                    │
+│  │                    │                    │                    │
+│  └────────────────────┴────────────────────┘                    │
+│       ↓                                                          │
+│  Réponse contextuelle + Sources (si RAG)                        │
+│                                                                  │
+└─────────────────────────────────────────────────────────────────┘
+
+Flux détaillé du pipeline de chat:
+
+1. Requête utilisateur
+       │
+       ▼
+2. Classification (needs_rag?)
+       │
+       ├──────────────────────┐
+       │                      │
+   [SEARCH]               [CHAT]
+       │                      │
+       ▼                      ▼
+3. Encodage requête    4. Réponse directe
+   (mistral-embed)        (sans RAG)
+   → embedding 1024d
+       │
+       ▼
+4. Recherche FAISS
+   (IndexFlatL2)
+   → distance L2
+       │
+       ▼
+5. Top-K documents
+   (similarité cosinus)
+       │
+       ▼
+6. Génération LLM
+   avec contexte
+   (mistral-small)
+       │
+       ▼
+7. Réponse + Sources
+
+
+Flux détaillé du pipeline de reconstruction d'index:
+
+1. POST /rebuild
+   (avec X-API-Key)
+       │
+       ▼
+2. Validation API Key
+       │
+       ▼
+3. Tâche en arrière-plan
+       │
+       ├─▶ Charger documents
+       │   (rag_documents.json)
+       │
+       ├─▶ Générer embeddings
+       │   (batch de 32)
+       │   (mistral-embed 1024d)
+       │
+       ├─▶ Construire index FAISS
+       │   (IndexFlatL2)
+       │   (L2 normalization)
+       │
+       └─▶ Sauvegarder fichiers
+           (events.index + metadata.pkl)
+
+4. Invalidation cache RAGEngine
+       │
+       ▼
+5. Nouvel index disponible

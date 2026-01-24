@@ -1,0 +1,66 @@
+============================= test session starts ==============================
+platform darwin -- Python 3.11.13, pytest-7.4.4, pluggy-1.6.0 -- /Users/ppluton/Documents/Repositories/OC7---Projet-RAG-Assistant-Intelligent-Events/.venv/bin/python3
+cachedir: .pytest_cache
+rootdir: /Users/ppluton/Documents/Repositories/OC7---Projet-RAG-Assistant-Intelligent-Events
+configfile: pyproject.toml
+testpaths: tests
+plugins: anyio-4.12.1, asyncio-0.23.8, langsmith-0.6.4, cov-4.1.0
+asyncio: mode=Mode.STRICT
+collecting ... collected 64 items / 2 errors
+
+==================================== ERRORS ====================================
+_______________ ERROR collecting tests/e2e/test_rag_pipeline.py ________________
+ImportError while importing test module '/Users/ppluton/Documents/Repositories/OC7---Projet-RAG-Assistant-Intelligent-Events/tests/e2e/test_rag_pipeline.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+../../../.local/share/uv/python/cpython-3.11.13-macos-aarch64-none/lib/python3.11/importlib/__init__.py:126: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+tests/e2e/test_rag_pipeline.py:4: in <module>
+    from fastapi.testclient import TestClient
+E   ModuleNotFoundError: No module named 'fastapi'
+________________ ERROR collecting tests/integration/test_api.py ________________
+ImportError while importing test module '/Users/ppluton/Documents/Repositories/OC7---Projet-RAG-Assistant-Intelligent-Events/tests/integration/test_api.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+../../../.local/share/uv/python/cpython-3.11.13-macos-aarch64-none/lib/python3.11/importlib/__init__.py:126: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+tests/integration/test_api.py:4: in <module>
+    from fastapi.testclient import TestClient
+E   ModuleNotFoundError: No module named 'fastapi'
+=============================== warnings summary ===============================
+<frozen importlib._bootstrap>:241
+  <frozen importlib._bootstrap>:241: DeprecationWarning: builtin type SwigPyPacked has no __module__ attribute
+
+<frozen importlib._bootstrap>:241
+  <frozen importlib._bootstrap>:241: DeprecationWarning: builtin type SwigPyObject has no __module__ attribute
+
+<frozen importlib._bootstrap>:241
+  <frozen importlib._bootstrap>:241: DeprecationWarning: builtin type swigvarlink has no __module__ attribute
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+
+--------- coverage: platform darwin, python 3.11.13-final-0 ----------
+Name                       Stmts   Miss  Cover   Missing
+--------------------------------------------------------
+src/__init__.py                1      0   100%
+src/api/__init__.py            0      0   100%
+src/api/main.py              129    129     0%   3-299
+src/config/__init__.py         2      0   100%
+src/config/constants.py       36      0   100%
+src/config/settings.py        65     11    83%   98, 106, 115, 121, 126-128, 133-135, 145
+src/data/__init__.py           0      0   100%
+src/data/models.py           124     39    69%   30-33, 46-48, 53-54, 78, 84-86, 92, 97-100, 107, 112, 117-118, 127-148, 157, 188, 192, 230-232
+src/rag/__init__.py            0      0   100%
+src/rag/engine.py             85     66    22%   25-52, 61-87, 91-111, 123-135, 148-163, 183-216, 236-245, 255, 260
+src/rag/index_builder.py      88     88     0%   3-242
+src/ui/__init__.py             0      0   100%
+src/utils/__init__.py          0      0   100%
+--------------------------------------------------------
+TOTAL                        530    333    37%
+Coverage HTML written to dir htmlcov
+
+=========================== short test summary info ============================
+ERROR tests/e2e/test_rag_pipeline.py
+ERROR tests/integration/test_api.py
+!!!!!!!!!!!!!!!!!!! Interrupted: 2 errors during collection !!!!!!!!!!!!!!!!!!!!
+======================== 3 warnings, 2 errors in 0.74s =========================

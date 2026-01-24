@@ -1,0 +1,93 @@
+┌─────────────────────────────────────────────────────────────────────────┐
+│                           UTILISATEUR                                    │
+└───────────────────────────────┬─────────────────────────────────────────┘
+                                │
+                                ▼
+┌───────────────────────────────────────────────────────────────────────────┐
+│                         COUCHE PRESENTATION                               │
+│  ┌─────────────────────┐         ┌─────────────────────────────────────┐  │
+│  │   Streamlit UI      │         │         FastAPI REST API            │  │
+│  │   (Port 8501)       │         │         (Port 8000)                 │  │
+│  │                     │         │                                     │  │
+│  │  - Chat interface   │         │  - POST /search                     │  │
+│  │  - Historique       │         │  - POST /chat                       │  │
+│  │  - Sources          │         │  - POST /rebuild                    │  │
+│  │  - Configuration    │         │  - GET  /health                     │  │
+│  │  - Thème sombre     │         │  - GET/DELETE /session/{id}         │  │
+│  │                     │         │  - GET /rebuild/{task_id}           │  │
+│  └─────────────────────┘         └─────────────────────────────────────┘  │
+└───────────────────────────────────┬───────────────────────────────────────┘
+                                    │
+                                    ▼
+┌───────────────────────────────────────────────────────────────────────────┐
+│                         COUCHE LOGIQUE METIER                             │
+│  ┌─────────────────────────────────────────────────────────────────────┐  │
+│  │                         RAGEngine                                    │  │
+│  │                                                                      │  │
+│  │  ┌──────────────┐    ┌──────────────┐    ┌───────────────────────┐  │  │
+│  │  │  needs_rag() │───▶│   search()   │───▶│  generate_response()  │  │  │
+│  │  │  (Classif.)  │    │  (Retrieval) │    │    (Generation)       │  │  │
+│  │  └──────────────┘    └──────────────┘    └───────────────────────┘  │  │
+│  │         │                    │                      │                │  │
+│  │         ▼                    ▼                      ▼                │  │
+│  │  ┌──────────────┐    ┌──────────────┐    ┌───────────────────────┐  │  │
+│  │  │ Mistral LLM  │    │ FAISS Index  │    │    Mistral LLM        │  │  │
+│  │  │ (Classif.)   │    │ (Recherche)  │    │   (Generation)        │  │  │
+│  │  └──────────────┘    └──────────────┘    └───────────────────────┘  │  │
+│  │                                                                      │  │
+│  │  IndexBuilder: Construction et gestion de l'index FAISS             │  │
+│  └─────────────────────────────────────────────────────────────────────┘  │
+└───────────────────────────────────┬───────────────────────────────────────┘
+                                    │
+                                    ▼
+┌───────────────────────────────────────────────────────────────────────────┐
+│                         COUCHE DONNEES                                    │
+│  ┌─────────────────────┐    ┌─────────────────────────────────────────┐  │
+│  │  data/processed/    │    │         Services Externes                │  │
+│  │                     │    │                                          │  │
+│  │  - faiss_index/     │    │  ┌────────────────┐ ┌─────────────────┐  │  │
+│  │    - events.index   │    │  │  Mistral API   │ │ Open Agenda API │  │  │
+│  │    - metadata.pkl   │    │  │  (Embeddings)  │ │    (Events)     │  │  │
+│  │    - config.json    │    │  │  (LLM)         │ │                 │  │  │
+│  │                     │    │  └────────────────┘ └─────────────────┘  │  │
+│  │  - rag_documents.   │    │                                          │  │
+│  │    json             │    │                                          │  │
+│  │                     │    │                                          │  │
+│  │  - embeddings/      │    │                                          │  │
+│  │    - embeddings.npy │    │                                          │  │
+│  └─────────────────────┘    └─────────────────────────────────────────┘  │
+└───────────────────────────────────────────────────────────────────────────┘
+
+
+Configuration et Gestion:
+
+┌───────────────────────────────────────────────────────────────────────────┐
+│                         CONFIGURATION                                     │
+│                                                                           │
+│  src/config/                                                              │
+│  ├─ settings.py        (Pydantic Settings avec .env)                     │
+│  │  - MISTRAL_API_KEY                                                    │
+│  │  - EMBEDDING_PROVIDER (mistral | sentence-transformers)              │
+│  │  - LLM_MODEL, LLM_TEMPERATURE                                         │
+│  │  - TOP_K_RESULTS, MIN_SIMILARITY_SCORE                                │
+│  │                                                                        │
+│  └─ constants.py       (Constantes application)                          │
+│     - SYSTEM_PROMPT_TEMPLATE                                             │
+│     - PROJECT_ROOT, DATA_DIR, INDEXES_DIR                                │
+│     - TARGET_LATENCY_SECONDS = 3.0                                       │
+│     - TARGET_RELEVANCE_SCORE = 0.8                                       │
+└───────────────────────────────────────────────────────────────────────────┘
+
+
+Modèles de Données (Pydantic):
+
+┌───────────────────────────────────────────────────────────────────────────┐
+│                         src/data/models.py                                │
+│                                                                           │
+│  - Event         (événement culturel avec métadonnées)                   │
+│  - Location      (ville, adresse, coordonnées)                           │
+│  - DateRange     (start_date, end_date)                                  │
+│  - QueryResponse (réponse avec sources)                                  │
+│  - ChatRequest   (requête chat avec session_id)                          │
+│  - SearchRequest (requête recherche avec top_k)                          │
+└───────────────────────────────────────────────────────────────────────────┘
