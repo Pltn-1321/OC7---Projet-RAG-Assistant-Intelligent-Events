@@ -3,6 +3,7 @@
 > **Assistant conversationnel intelligent** pour découvrir des événements culturels via des questions en langage naturel
 
 [![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
+[![LangChain](https://img.shields.io/badge/LangChain-LCEL-blueviolet.svg)](https://python.langchain.com/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.115+-green.svg)](https://fastapi.tiangolo.com/)
 [![Streamlit](https://img.shields.io/badge/Streamlit-1.41+-red.svg)](https://streamlit.io/)
 [![Mistral AI](https://img.shields.io/badge/Mistral%20AI-latest-orange.svg)](https://mistral.ai/)
@@ -60,6 +61,8 @@ Le RAG (Retrieval-Augmented Generation) est une architecture d'IA qui enrichit l
 └─────────────────────────────────────────────────────────────────┘
 ```
 
+> **Architecture interne** : Chaque étape utilise des **chaînes LCEL** (LangChain Expression Language) composables via l'opérateur `|` : `prompt | llm | parser`
+
 ### Pourquoi ce projet ?
 
 - **🎓 Pédagogique** : Implémentation complète d'un système RAG moderne
@@ -72,9 +75,10 @@ Le RAG (Retrieval-Augmented Generation) est une architecture d'IA qui enrichit l
 
 | Composant | Technologie | Rôle |
 |-----------|-------------|------|
-| **LLM** | Mistral AI (`mistral-small-latest`) | Génération de réponses conversationnelles |
-| **Embeddings** | Mistral Embed (1024d) | Vectorisation sémantique multilingue |
-| **Vector Store** | FAISS | Recherche de similarité ultra-rapide |
+| **Orchestration** | LangChain LCEL | Composition de chaînes RAG modulaires |
+| **LLM** | Mistral AI via `langchain-mistralai` | Génération de réponses conversationnelles |
+| **Embeddings** | Mistral Embed / HuggingFace via LangChain | Vectorisation sémantique multilingue |
+| **Vector Store** | FAISS via `langchain-community` | Recherche de similarité ultra-rapide |
 | **API** | FastAPI | REST API avec sessions et background tasks |
 | **UI** | Streamlit | Interface chat moderne et réactive |
 | **Data** | Open Agenda API | Source d'événements culturels |
@@ -142,23 +146,57 @@ Le RAG (Retrieval-Augmented Generation) est une architecture d'IA qui enrichit l
 
 #### **RAGEngine** (`src/rag/engine.py`)
 
-Le cœur du système RAG avec :
+Le cœur du système RAG orchestré par **3 chaînes LCEL** :
 
-- `needs_rag(query)` : Classification intelligente CHAT vs SEARCH
-- `encode_query(query)` : Génération d'embeddings (Mistral ou SentenceTransformers)
-- `search(query, top_k)` : Recherche sémantique FAISS avec scores
-- `generate_response(query, context)` : Génération LLM avec streaming
-- `chat(query, history)` : Pipeline complet unifié
+- **Classification Chain** : `needs_rag(query)` → Routage CHAT vs SEARCH
+- **Conversation Chain** : `conversation_response(query, history)` → Mode CHAT (sans contexte)
+- **RAG Chain** : `generate_response(query, context, history)` → Mode SEARCH (avec contexte)
+- `search(query, top_k)` : Recherche sémantique via `FAISS.similarity_search_with_score()`
+- `chat(query, history)` : Pipeline complet unifié avec détection automatique
+
+#### **Composants LangChain** (`src/rag/`)
+
+| Module | Fonction | Composant LangChain |
+|--------|----------|---------------------|
+| `embeddings.py` | `get_embeddings()` | `MistralAIEmbeddings` / `HuggingFaceEmbeddings` |
+| `llm.py` | `get_llm()` | `ChatMistralAI` avec paramètres configurables |
+| `vectorstore.py` | `load/build/save_vectorstore()` | `FAISS` de `langchain-community` |
 
 #### **IndexBuilder** (`src/rag/index_builder.py`)
 
-Construction et gestion des index FAISS :
+Construction et gestion des index FAISS via LangChain :
 
-- `load_documents()` : Chargement des événements depuis JSON
-- `generate_embeddings()` : Batch embedding avec progress tracking
-- `build_index()` : Création FAISS IndexFlatL2 avec normalisation L2
-- `save_index()` : Persistance index + metadata (pickle)
-- `rebuild()` : Pipeline complet avec callbacks
+- `load_documents()` : Chargement des événements vers `Document` LangChain
+- `build_and_save()` : Construction via `FAISS.from_documents()` avec batch processing
+- `rebuild()` : Pipeline complet avec callbacks de progression
+
+### Chaînes LCEL
+
+Le système utilise **LangChain Expression Language (LCEL)** pour composer des pipelines modulaires et testables :
+
+```python
+from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
+from langchain_core.output_parsers import StrOutputParser
+
+# Classification Chain - Détermine SEARCH vs CHAT
+classification_chain = ChatPromptTemplate | LLM(temperature=0) | StrOutputParser
+
+# Conversation Chain - Mode CHAT (sans contexte RAG)
+conversation_chain = ChatPromptTemplate([
+    ("system", SYSTEM_PROMPT),
+    MessagesPlaceholder("history"),
+    ("human", "{query}")
+]) | LLM | StrOutputParser
+
+# RAG Chain - Mode SEARCH (avec contexte injecté)
+rag_chain = ChatPromptTemplate([
+    ("system", RAG_PROMPT_WITH_CONTEXT),
+    MessagesPlaceholder("history"),
+    ("human", "{query}")
+]) | LLM | StrOutputParser
+```
+
+> 📚 Voir **[INTEGRATION_LANGCHAIN.md](docs/INTEGRATION_LANGCHAIN.md)** pour l'architecture complète et **[GUIDE_LANGCHAIN.md](docs/GUIDE_LANGCHAIN.md)** pour un guide pédagogique.
 
 #### **FastAPI** (`src/api/main.py`)
 
@@ -478,6 +516,8 @@ Documentation complète dans le dossier `docs/` :
 | Document | Description |
 |----------|-------------|
 | **[ARCHITECTURE.md](docs/ARCHITECTURE.md)** | Architecture système détaillée |
+| **[INTEGRATION_LANGCHAIN.md](docs/INTEGRATION_LANGCHAIN.md)** | Architecture LangChain LCEL complète |
+| **[GUIDE_LANGCHAIN.md](docs/GUIDE_LANGCHAIN.md)** | Guide pédagogique LangChain (concepts, patterns) |
 | **[COMPRENDRE_LE_RAG.md](docs/COMPRENDRE_LE_RAG.md)** | Guide pédagogique sur le RAG |
 | **[GUIDE_DEMARRAGE.md](docs/GUIDE_DEMARRAGE.md)** | Guide de démarrage complet |
 | **[REFERENCE_API.md](docs/REFERENCE_API.md)** | Documentation API complète |
@@ -585,6 +625,7 @@ Ce projet est sous licence **MIT**. Voir [LICENSE](LICENSE) pour plus de détail
 
 ## 🙏 Remerciements
 
+- **[LangChain](https://python.langchain.com/)** : Framework d'orchestration LLM avec LCEL
 - **[Mistral AI](https://mistral.ai/)** : LLM et embeddings français de qualité
 - **[FAISS](https://github.com/facebookresearch/faiss)** : Bibliothèque de recherche vectorielle ultra-rapide
 - **[Open Agenda](https://openagenda.com/)** : API d'événements culturels

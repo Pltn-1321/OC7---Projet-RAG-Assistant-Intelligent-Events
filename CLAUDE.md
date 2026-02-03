@@ -10,7 +10,7 @@ This is a RAG (Retrieval-Augmented Generation) chatbot for discovering cultural 
 
 **Package Manager**: This project uses `uv` (not pip). All dependency management and script execution should be done through `uv`.
 
-**Architecture**: Direct SDK integration (Mistral AI, FAISS) - NOT LangChain. Consolidated RAGEngine for all RAG operations.
+**Architecture**: LangChain LCEL (LangChain Expression Language) for RAG orchestration, with Mistral AI (LLM + Embeddings) and FAISS (vector store).
 
 ## Implementation Status
 
@@ -183,17 +183,19 @@ User Query → Streamlit UI / FastAPI → RAGEngine
   - `models.py`: ✅ Pydantic models for Event, Location, DateRange, QueryResponse, EvaluationQuestion, EvaluationResult
   - Data fetching and preprocessing handled via Jupyter notebooks (`notebooks/01_data_collection.ipynb`, `notebooks/02_data_preprocessing.ipynb`)
 
-- **src/rag/**: Core RAG logic
-  - `engine.py`: ✅ Complete RAG pipeline implementation (RAGEngine class)
-    - Query classification (`needs_rag()`) - Distinguishes SEARCH vs CHAT queries
-    - Conversational responses (`conversation_response()`) - Non-RAG chat handling
-    - Embedding generation (`encode_query()`) - Mistral or SentenceTransformers support
-    - Semantic search (`search()`) - FAISS vector retrieval
-    - Response generation (`generate_response()`) - LLM with retrieved context
+- **src/rag/**: Core RAG logic (LangChain LCEL-based)
+  - `engine.py`: ✅ RAGEngine class with LCEL chains
+    - Query classification (`needs_rag()`) via classification chain
+    - Conversational responses (`conversation_response()`) via conversation chain
+    - Semantic search (`search()`) via LangChain FAISS vector store
+    - Response generation (`generate_response()`) via RAG chain
     - Unified chat interface (`chat()`) - Complete pipeline with automatic RAG detection
-  - `index_builder.py`: ✅ FAISS index construction (IndexBuilder class)
-    - Document loading, batch embedding generation, index building with L2 normalization
-    - Metadata persistence, progress tracking, supports both Mistral and SentenceTransformers embeddings
+  - `embeddings.py`: ✅ Factory `get_embeddings()` → `MistralAIEmbeddings` or `HuggingFaceEmbeddings`
+  - `llm.py`: ✅ Factory `get_llm()` → `ChatMistralAI` with configurable parameters
+  - `vectorstore.py`: ✅ Functions `load_vectorstore()`, `build_vectorstore()`, `save_vectorstore()`
+  - `index_builder.py`: ✅ FAISS index construction with LangChain format
+    - Uses `FAISS.from_documents()` and `save_local()` for LangChain-compatible serialization
+    - Progress tracking, batch processing
 
 - **src/api/**: ✅ FastAPI REST API (fully implemented)
   - `main.py`: Complete REST API with health checks, search, chat with session memory, and background index rebuilding
@@ -225,9 +227,9 @@ User Query → Streamlit UI / FastAPI → RAGEngine
    - `.to_display_dict()`: Formats event for UI display
    - `.is_free`, `.is_upcoming`, `.is_past`, `.is_ongoing`: Computed properties
 
-3. **Vector Store**: FAISS with direct integration. Default embedding provider: **Mistral** (`mistral-embed`, 1024 dimensions). Also supports sentence-transformers (`paraphrase-multilingual-mpnet-base-v2`, 768 dimensions) via settings.
+3. **Vector Store**: FAISS via LangChain wrapper (`langchain_community.vectorstores.FAISS`). Default embedding provider: **Mistral** (`mistral-embed`, 1024 dimensions). Also supports HuggingFace (`paraphrase-multilingual-mpnet-base-v2`, 768 dimensions) via settings.
 
-4. **LLM Integration**: Direct Mistral SDK integration (NOT LangChain). Uses Mistral client with `mistral-small-latest` model, temperature 0.7, streaming support.
+4. **LLM Integration**: LangChain `ChatMistralAI` from `langchain_mistralai`. Uses `mistral-small-latest` model, temperature 0.7, with LCEL chains for orchestration.
 
 5. **Testing Strategy**:
    - Uses pytest with custom markers (slow, integration, e2e, requires_api)
@@ -236,29 +238,38 @@ User Query → Streamlit UI / FastAPI → RAGEngine
 
 ## Critical Implementation Details
 
-### Architecture Note: Direct Integration (NOT LangChain)
-**This project uses direct SDK integration, NOT LangChain:**
+### Architecture Note: LangChain LCEL Integration
+**This project uses LangChain LCEL for RAG orchestration:**
 
 ```python
-# ✅ CORRECT - What this project uses
-from mistralai import Mistral
-import faiss
-from sentence_transformers import SentenceTransformer
+# LangChain components used
+from langchain_mistralai import ChatMistralAI, MistralAIEmbeddings
+from langchain_community.vectorstores import FAISS
+from langchain_huggingface import HuggingFaceEmbeddings
+from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
+from langchain_core.output_parsers import StrOutputParser
 
-# ❌ NOT USED - LangChain components are NOT in this project
-# from langchain_community.vectorstores import FAISS
-# from langchain_mistralai import ChatMistralAI
+# LCEL chain example
+chain = ChatPromptTemplate | ChatMistralAI | StrOutputParser
 ```
+
+See `docs/INTEGRATION_LANGCHAIN.md` for detailed architecture documentation.
 
 ### FAISS Index Management
-FAISS indexes are managed through the `IndexBuilder` class with pickle serialization:
+FAISS indexes are managed through LangChain's `FAISS` wrapper:
 
 ```python
-# Loading a FAISS index
-index = faiss.read_index(str(index_path / "index.faiss"))
-with open(index_path / "index.pkl", "rb") as f:
-    metadata = pickle.load(f)
+# Loading a FAISS index (LangChain format)
+from langchain_community.vectorstores import FAISS
+vectorstore = FAISS.load_local(folder_path, embeddings, allow_dangerous_deserialization=True)
+
+# Files created by save_local():
+# - index.faiss (FAISS binary index)
+# - index.pkl (docstore and mapping)
+# - config.json (custom metadata for compatibility)
 ```
+
+**Migration**: Run `uv run python scripts/migrate_index.py` to convert legacy indexes to LangChain format.
 
 ### Embedding Provider Selection
 The project supports two embedding providers via `settings.embedding_provider`:
@@ -364,6 +375,7 @@ docker-compose up streamlit    # Only Streamlit
 
 Comprehensive documentation is available in the `docs/` directory:
 
+- **INTEGRATION_LANGCHAIN.md**: LangChain architecture, components, and migration guide
 - **ARCHITECTURE.md**: Detailed system architecture and design decisions
 - **COMPRENDRE_LE_RAG.md**: RAG concepts explained (in French)
 - **GUIDE_DEMARRAGE.md**: Getting started guide (in French)

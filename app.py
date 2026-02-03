@@ -1,5 +1,10 @@
 """Chatbot Streamlit - Assistant Événements RAG."""
 
+# Fix OpenMP duplicate library error on macOS
+# Must be set BEFORE importing numpy, faiss, or sentence-transformers
+import os
+os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
+
 import streamlit as st
 from pathlib import Path
 
@@ -357,6 +362,40 @@ st.markdown(
 for message in st.session_state.messages:
     with st.chat_message(message["role"], avatar="👤" if message["role"] == "user" else "🎭"):
         st.markdown(message["content"])
+        # Afficher les sources si présentes dans l'historique
+        if message.get("sources"):
+            with st.expander(f"📍 Sources ({len(message['sources'])} événements trouvés)"):
+                for i, src in enumerate(message["sources"][:3], 1):
+                    doc = src["document"]
+                    meta = doc["metadata"]
+
+                    url = meta.get("url")
+                    if url:
+                        link_html = f'<p style="margin: 0.5rem 0;"><a href="{url}" target="_blank" style="color: #6366f1; text-decoration: none; font-weight: 600;">🔗 Voir l\'événement →</a></p>'
+                    else:
+                        link_html = ""
+
+                    st.markdown(
+                        f"""
+                        <div style="background: rgba(30, 41, 59, 0.8);
+                                    padding: 1rem;
+                                    border-radius: 12px;
+                                    margin: 1rem 0;
+                                    border: 1px solid rgba(255, 255, 255, 0.1);">
+                            <h4 style="color: #818cf8; margin: 0 0 0.5rem 0;">
+                                {i}. {doc["title"]}
+                            </h4>
+                            <p style="color: #f472b6; font-size: 0.9rem; margin: 0.5rem 0;">
+                                Score de pertinence: <strong>{src["similarity"]:.1%}</strong>
+                            </p>
+                            <p style="color: #94a3b8; font-size: 0.85rem; margin: 0.25rem 0;">
+                                📍 {meta.get("city", "?")} | 📅 {meta.get("start_date", "?")[:10]}
+                            </p>
+                            {link_html}
+                        </div>
+                    """,
+                        unsafe_allow_html=True,
+                    )
 
 st.markdown("</div>", unsafe_allow_html=True)
 
@@ -418,8 +457,11 @@ if prompt := st.chat_input("💬 Posez votre question sur les événements..."):
                         unsafe_allow_html=True,
                     )
 
-    # Sauvegarder la réponse
-    st.session_state.messages.append({"role": "assistant", "content": result["response"]})
+    # Sauvegarder la réponse avec les sources si disponibles
+    message_data = {"role": "assistant", "content": result["response"]}
+    if result.get("used_rag") and result.get("sources"):
+        message_data["sources"] = result["sources"]
+    st.session_state.messages.append(message_data)
 
 # Footer moderne
 st.markdown(

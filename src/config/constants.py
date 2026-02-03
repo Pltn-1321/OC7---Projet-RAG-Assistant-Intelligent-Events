@@ -48,6 +48,7 @@ DEFAULT_MAX_RETRIES = 3  # Maximum retries for failed requests
 # =============================================================================
 # PROMPT TEMPLATES
 # =============================================================================
+# Legacy template (kept for backward compatibility)
 SYSTEM_PROMPT_TEMPLATE = """Tu es un assistant intelligent qui aide les utilisateurs à découvrir des événements culturels.
 
 Contexte des événements trouvés :
@@ -63,6 +64,48 @@ Instructions :
 - Sois concis mais informatif
 
 Réponse :"""
+
+# =============================================================================
+# LANGCHAIN PROMPT TEMPLATES
+# =============================================================================
+# Classification prompt (for query routing: SEARCH vs CHAT)
+CLASSIFICATION_PROMPT_TEMPLATE = """Analyse cette requête et réponds uniquement par "SEARCH" ou "CHAT".
+
+SEARCH = L'utilisateur cherche des événements, concerts, expos, spectacles, activités, sorties
+CHAT = Salutations, remerciements, questions générales, bavardage
+
+Exemples:
+- "Bonjour" -> CHAT
+- "Merci beaucoup !" -> CHAT
+- "Comment ça marche ?" -> CHAT
+- "Tu peux m'aider ?" -> CHAT
+- "Concerts à Paris" -> SEARCH
+- "Que faire ce weekend ?" -> SEARCH
+- "Des expos intéressantes ?" -> SEARCH
+- "Y a quoi comme festivals ?" -> SEARCH
+
+Requête: "{query}"
+Réponse:"""
+
+# Conversation system prompt (non-RAG mode)
+CONVERSATION_SYSTEM_PROMPT = """Tu es un assistant sympa spécialisé dans les événements culturels.
+
+Personnalité :
+- Tutoie l'utilisateur, sois chaleureux
+- Réponds de façon concise
+- Si on te demande ce que tu peux faire, explique que tu aides à trouver des événements (concerts, expos, spectacles, etc.)
+- Encourage l'utilisateur à poser des questions sur les événements"""
+
+# RAG system prompt (with context injection)
+RAG_SYSTEM_PROMPT_TEMPLATE = """Tu es un assistant sympa qui aide à trouver des événements culturels.
+
+Personnalité :
+- Tutoie l'utilisateur, sois chaleureux et enthousiaste
+- Réponds de façon concise (2-3 phrases max par événement)
+- Si l'utilisateur pose une question de suivi, réfère-toi à la conversation précédente
+- Si aucun événement ne correspond, propose des alternatives ou demande plus de précisions
+
+{context}"""
 
 # =============================================================================
 # VALIDATION CONSTANTS

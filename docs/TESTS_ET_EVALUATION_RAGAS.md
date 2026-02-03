@@ -7,15 +7,16 @@
 ## Table des Matières
 
 1. [Vue d'ensemble de la stratégie de tests](#vue-densemble)
-2. [Architecture des tests](#architecture-des-tests)
-3. [Tests unitaires](#tests-unitaires)
-4. [Tests d'intégration](#tests-dintégration)
-5. [Tests end-to-end](#tests-end-to-end)
-6. [Framework d'évaluation RAGAS](#framework-dévaluation-ragas)
-7. [Métriques personnalisées](#métriques-personnalisées)
-8. [Dataset de test annoté](#dataset-de-test-annoté)
-9. [Exécution et interprétation](#exécution-et-interprétation)
-10. [Guide d'amélioration](#guide-damélioration)
+2. [Pourquoi RAGAS pour ce projet](#pourquoi-ragas-pour-langchain)
+3. [Architecture des tests](#architecture-des-tests)
+4. [Tests unitaires](#tests-unitaires)
+5. [Tests d'intégration](#tests-dintégration)
+6. [Tests end-to-end](#tests-end-to-end)
+7. [Framework d'évaluation RAGAS](#framework-dévaluation-ragas)
+8. [Métriques personnalisées](#métriques-personnalisées)
+9. [Dataset de test annoté](#dataset-de-test-annoté)
+10. [Exécution et interprétation](#exécution-et-interprétation)
+11. [Guide d'amélioration](#guide-damélioration)
 
 ---
 
@@ -51,6 +52,125 @@ Le projet adopte une approche **pyramidale** des tests avec trois niveaux compl�
 | Cible couverture code | >80% |
 | Cible latence | <3.0s |
 | Cible pertinence | >80% |
+
+---
+
+## Pourquoi RAGAS pour ce projet {#pourquoi-ragas-pour-langchain}
+
+### Justification de la méthodologie RAGAS
+
+**RAGAS** (Retrieval Augmented Generation Assessment) est le framework d'évaluation choisi pour ce projet car il répond spécifiquement aux défis des systèmes RAG :
+
+#### Le problème des métriques traditionnelles
+
+Les métriques classiques d'évaluation NLP sont **inadaptées** aux systèmes RAG :
+
+| Métrique | Problème pour un RAG |
+|----------|----------------------|
+| **BLEU** | Compare des n-grams → une réponse paraphrasée correcte obtient un score faible |
+| **ROUGE** | Similarité lexicale → ne capture pas la pertinence sémantique |
+| **Accuracy** | Nécessite une réponse exacte → impossible avec du texte généré |
+| **Perplexité** | Mesure la fluidité → un texte fluide peut être factuellement faux |
+| **F1** | Comparaison mot à mot → pénalise les reformulations correctes |
+
+**Exemple concret** :
+```
+Question : "Concerts jazz ce weekend à Paris ?"
+Ground truth : "Concert au Caveau samedi 20h, 15€"
+Réponse RAG : "Il y a un spectacle de jazz au Caveau de la Huchette ce samedi soir à 20 heures pour quinze euros"
+
+BLEU score ≈ 0.2 (faible car mots différents)
+ROUGE score ≈ 0.3 (peu de chevauchement lexical)
+→ Pourtant la réponse est correcte et complète !
+```
+
+#### Ce que RAGAS évalue vraiment
+
+RAGAS répond aux **vraies questions** d'un système RAG :
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                    Questions d'évaluation RAG                   │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                 │
+│  RETRIEVAL (récupération des documents)                        │
+│  ─────────────────────────────────────                         │
+│  • Les documents récupérés sont-ils pertinents ?               │
+│    → Context Precision                                          │
+│  • Tous les documents nécessaires sont-ils récupérés ?         │
+│    → Context Recall                                             │
+│                                                                 │
+│  GENERATION (réponse du LLM)                                    │
+│  ──────────────────────────                                     │
+│  • La réponse est-elle fidèle aux documents ?                  │
+│    → Faithfulness (détection d'hallucinations)                  │
+│  • La réponse répond-elle à la question posée ?                │
+│    → Answer Relevancy                                           │
+│                                                                 │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+#### Métriques adaptées à notre use case événementiel
+
+| Métrique RAGAS | Ce qu'elle évalue dans notre projet |
+|----------------|-------------------------------------|
+| **Faithfulness** | Le LLM ne hallucine-t-il pas sur les **prix, dates, lieux** des événements ? |
+| **Answer Relevancy** | La réponse recommande-t-elle des événements **pertinents** à la question ? |
+| **Context Precision** | Les embeddings récupèrent-ils les **bons événements** dans FAISS ? |
+| **Context Recall** | Le **top_k=5** est-il suffisant pour couvrir l'information nécessaire ? |
+
+**Importance pour les événements culturels** :
+- Une hallucination sur le prix (gratuit vs 15€) ou la date peut frustrer l'utilisateur
+- Un événement hors-sujet dans les résultats dégrade l'expérience
+- RAGAS détecte ces problèmes que les tests unitaires ne peuvent pas capturer
+
+#### Évaluation découplée retrieval/génération
+
+Notre architecture sépare clairement :
+1. **Retrieval** : Recherche FAISS → évalué par **Context Precision/Recall**
+2. **Génération** : LLM Mistral → évalué par **Faithfulness/Relevancy**
+
+```python
+# Évaluation découplée dans evaluate_rag.py
+# 1. Récupération des contextes (retrieval)
+search_results = engine.search(query, top_k=5)
+contexts = [r["document"]["content"] for r in search_results]
+
+# 2. Génération avec contexte (generation)
+chat_result = engine.chat(query, top_k=5)
+answer = chat_result["response"]
+
+# RAGAS évalue ces deux étapes séparément
+# → Si Context Precision est faible : problème d'embeddings ou de top_k
+# → Si Faithfulness est faible : problème de prompt ou de température LLM
+```
+
+### Alternatives considérées et rejetées
+
+| Alternative | Raison du rejet |
+|-------------|-----------------|
+| **BLEU/ROUGE** | Comparent des n-grams, inadaptées aux réponses génératives |
+| **Évaluation manuelle** | Non scalable, subjective, coûteuse en temps |
+| **Tests unitaires seuls** | Vérifient le fonctionnement, pas la qualité des réponses |
+| **Perplexité** | Mesure la fluidité du texte, pas sa factualité |
+| **LLM-as-judge (seul)** | Coûteux et moins structuré que RAGAS |
+
+### Résumé : Pourquoi RAGAS
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                    Avantages de RAGAS                           │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                 │
+│  ✅ Évaluation sémantique (pas juste lexicale)                  │
+│  ✅ Détection des hallucinations (Faithfulness)                 │
+│  ✅ Séparation retrieval/generation pour diagnostic précis      │
+│  ✅ Métriques quantifiables et comparables                      │
+│  ✅ Standard open-source adopté par la communauté RAG           │
+│  ✅ Fonctionne avec n'importe quel LLM (Mistral, OpenAI, etc.) │
+│                                                                 │
+└─────────────────────────────────────────────────────────────────┘
+```
 
 ---
 
@@ -168,27 +288,50 @@ def test_to_search_text_format(self, sample_event):
 
 | Classe de test | Marker | Ce qui est vérifié |
 |---|---|---|
-| `TestRAGEngineInitialization` | `requires_api` | Chargement index, gestion d'erreurs |
-| `TestNeedsRAG` | `requires_api` | Classification SEARCH vs CHAT |
-| `TestEncodeQuery` | `requires_api` | Vecteurs normalisés (norme ≈ 1.0), bonne dimension |
-| `TestSearch` | `requires_api` | Structure résultats, scores de similarité |
-| `TestChat` | `requires_api`, `slow` | Pipeline complet, gestion historique |
-| `TestConversationResponse` | `requires_api` | Réponses conversationnelles (sans RAG) |
-| `TestGenerateResponse` | `requires_api`, `slow` | Génération avec/sans contexte |
+| `TestRAGEngineInitialization` | `requires_api` | Chargement FAISS, initialisation embeddings/LLM |
+| `TestNeedsRAG` | `requires_api` | **Classification SEARCH vs CHAT** (chaîne de classification) |
+| `TestSearch` | `requires_api` | Recherche FAISS avec scores de similarité |
+| `TestChat` | `requires_api`, `slow` | **Pipeline complet unifié** : classification → search/chat → réponse |
+| `TestConversationResponse` | `requires_api` | Réponses conversationnelles (mode CHAT, sans contexte) |
+| `TestGenerateResponse` | `requires_api`, `slow` | Génération avec contexte (mode SEARCH) |
 
-**Pattern de dégradation gracieuse** :
+**Test de la classification (crucial pour RAGAS)** :
 
 ```python
 @pytest.mark.requires_api
-def test_search_returns_results(self):
+def test_needs_rag_classification(self):
+    """Vérifie que la classification SEARCH/CHAT fonctionne."""
     try:
         engine = RAGEngine()
     except FileNotFoundError:
         pytest.skip("Index FAISS non disponible")
 
-    results = engine.search("concert", top_k=3)
-    assert isinstance(results, list)
-    assert len(results) <= 3
+    # Questions de recherche → SEARCH mode → RAGAS évaluera
+    assert engine.needs_rag("concerts jazz ce weekend") is True
+    assert engine.needs_rag("événements gratuits à Paris") is True
+
+    # Questions conversationnelles → CHAT mode → RAGAS ignorera
+    assert engine.needs_rag("Bonjour, comment ça va ?") is False
+    assert engine.needs_rag("Merci pour ton aide !") is False
+```
+
+**Test du pipeline complet** :
+
+```python
+@pytest.mark.requires_api
+def test_chat_pipeline(self):
+    """Vérifie le pipeline unifié chat()."""
+    engine = RAGEngine()
+
+    # Requête RAG
+    result = engine.chat("concerts ce weekend", top_k=5)
+    assert result["used_rag"] is True  # ← Important pour évaluation RAGAS
+    assert "response" in result
+    assert "sources" in result
+
+    # Requête conversationnelle
+    result = engine.chat("Salut !")
+    assert result["used_rag"] is False  # ← RAGAS n'évaluera pas cette réponse
 ```
 
 ---
@@ -384,59 +527,106 @@ Contextes récupérés mentionnent : "concert", "jazz", "Paris"
 ├─────────────────────────────────────────────────────────────────┤
 │                                                                 │
 │  1. load_test_questions()                                       │
-│     └─ Charge tests/data/test_questions.json                    │
+│     └─ Charge tests/data/test_questions.json (12 questions)    │
 │     └─ Valide avec modèle EvaluationQuestion                   │
 │                                                                 │
 │  2. run_rag_queries()                                           │
-│     ├─ Initialise RAGEngine                                     │
+│     ├─ Initialise RAGEngine (embeddings + FAISS + LLM)         │
 │     ├─ Pour chaque question :                                   │
-│     │   ├─ engine.search(query, top_k) → contextes              │
-│     │   ├─ engine.chat(query) → réponse + used_rag              │
+│     │   ├─ engine.search(query, top_k) → contextes FAISS       │
+│     │   ├─ engine.chat(query) → classification auto + réponse  │
+│     │   │   └─ Classification: needs_rag() → CHAT ou SEARCH    │
+│     │   │   └─ Si SEARCH: recherche + génération avec contexte │
+│     │   │   └─ Si CHAT: réponse conversationnelle (pas de RAG) │
 │     │   ├─ Mesure latence (time.time)                           │
 │     │   └─ calculate_keyword_coverage()                         │
-│     └─ Retourne liste de résultats                              │
+│     └─ Retourne liste de résultats avec used_rag flag          │
 │                                                                 │
 │  3. run_ragas_evaluation() [optionnel]                          │
-│     ├─ Filtre résultats RAG uniquement (used_rag=True)          │
+│     ├─ ⚠️ Filtre: seuls les résultats avec used_rag=True       │
+│     │   (les questions conversationnelles sont exclues)         │
 │     ├─ Construit Dataset HuggingFace :                          │
 │     │   ├─ question: str                                        │
 │     │   ├─ answer: str                                          │
-│     │   ├─ contexts: list[str]                                  │
+│     │   ├─ contexts: list[str] (top-k documents FAISS)         │
 │     │   └─ ground_truth: str (mots-clés concaténés)             │
-│     ├─ ragas.evaluate(dataset, metrics=[...])                   │
+│     ├─ ragas.evaluate(dataset, metrics=[4 métriques])           │
 │     └─ Retourne scores RAGAS                                    │
 │                                                                 │
 │  4. generate_report()                                           │
 │     ├─ Agrège métriques (latence, couverture, par catégorie)    │
+│     ├─ Sépare: rag_queries vs conversation_queries             │
 │     ├─ Intègre scores RAGAS                                     │
 │     └─ Sauvegarde JSON → data/processed/evaluation_results.json │
 │                                                                 │
 │  5. print_summary()                                             │
-│     └─ Affichage formaté console                                │
+│     └─ Affichage formaté console avec breakdown par catégorie   │
 │                                                                 │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
+> **Note importante** : Seules les requêtes ayant déclenché le mode SEARCH (used_rag=True) sont évaluées par RAGAS. Les questions conversationnelles (catégorie `conversation`) sont exclues car elles n'utilisent pas le retrieval.
+
 #### Code de l'évaluation RAGAS
 
 ```python
-# scripts/evaluate_rag.py - Fonction clé
+# scripts/evaluate_rag.py - Fonctions clés
+
+def run_rag_queries(questions: list[EvaluationQuestion], top_k: int = 5) -> list[dict]:
+    """Execute le pipeline RAG complet pour chaque question."""
+    from src.rag.engine import RAGEngine
+
+    engine = RAGEngine()  # Charge FAISS + initialise embeddings + LLM
+    results = []
+
+    for q in questions:
+        start_time = time.time()
+
+        # Recherche sémantique FAISS
+        search_results = engine.search(q.question, top_k=top_k)
+        contexts = [r["document"]["content"] for r in search_results]
+
+        # Pipeline complet avec classification automatique
+        chat_result = engine.chat(q.question, top_k=top_k)
+        # chat_result contient:
+        # - response: str (réponse générée)
+        # - used_rag: bool (True si SEARCH mode, False si CHAT mode)
+        # - sources: list (documents utilisés si RAG)
+
+        latency = time.time() - start_time
+
+        results.append({
+            "question": q.question,
+            "answer": chat_result["response"],
+            "contexts": contexts,
+            "used_rag": chat_result["used_rag"],  # ← Clé pour filtrage RAGAS
+            "latency": latency,
+            "expected_keywords": q.expected_keywords,
+        })
+
+    return results
+
 
 def run_ragas_evaluation(results: list[dict]) -> dict:
+    """Évalue uniquement les résultats RAG (pas les conversations)."""
     from datasets import Dataset
     from ragas import evaluate
     from ragas.metrics import (
-        answer_relevancy,
-        context_precision,
-        context_recall,
-        faithfulness,
+        faithfulness,           # La réponse est-elle fidèle au contexte ?
+        answer_relevancy,       # La réponse répond-elle à la question ?
+        context_precision,      # Les documents récupérés sont-ils pertinents ?
+        context_recall,         # Tous les documents nécessaires sont-ils là ?
     )
 
-    # Seuls les résultats ayant utilisé le RAG sont évalués
+    # ⚠️ Filtrage crucial : seuls les résultats RAG sont évalués
+    # Les questions conversationnelles (used_rag=False) sont exclues
     rag_results = [r for r in results if r["used_rag"] and r["contexts"]]
 
+    if not rag_results:
+        return {}  # Pas de résultats RAG à évaluer
+
     # Construction du dataset au format RAGAS
-    dataset_dict = {
+    dataset = Dataset.from_dict({
         "question": [r["question"] for r in rag_results],
         "answer": [r["answer"] for r in rag_results],
         "contexts": [r["contexts"] for r in rag_results],
@@ -445,15 +635,11 @@ def run_ragas_evaluation(results: list[dict]) -> dict:
             else r["question"]
             for r in rag_results
         ],
-    }
+    })
 
-    dataset = Dataset.from_dict(dataset_dict)
-
-    ragas_results = evaluate(
-        dataset,
-        metrics=[faithfulness, answer_relevancy, context_precision, context_recall]
-    )
-    return dict(ragas_results)
+    return dict(evaluate(dataset, metrics=[
+        faithfulness, answer_relevancy, context_precision, context_recall
+    ]))
 ```
 
 #### Préparation du ground truth
@@ -617,7 +803,7 @@ EVALUATION DU SYSTEME RAG
 Fichier de questions: tests/data/test_questions.json
 Fichier de sortie: data/processed/evaluation_results.json
 Top-K: 5
-RAGAS: Active
+RAGAS: Active (ou Desactive si --skip-ragas)
 
 12 questions chargees
 
@@ -633,51 +819,62 @@ EXECUTION DES 12 REQUETES
 
 [1/12] Quels concerts de jazz sont prevus ce weekend...
    Latence: 1.47s | RAG: True | Keywords: 100%
+   ↳ Classification: SEARCH → recherche FAISS + génération
 
 [5/12] Bonjour, comment ca va ?...
    Latence: 1.98s | RAG: False | Keywords: 100%
+   ↳ Classification: CHAT → réponse conversationnelle (pas de RAG)
 
 ============================================================
 EVALUATION RAGAS
 ============================================================
 Cela peut prendre plusieurs minutes...
+(9 résultats RAG évalués, 3 conversations exclues)
 
 ============================================================
 RESUME DE L'EVALUATION
 ============================================================
 
 Questions evaluees: 12
-  - Requetes RAG: 9
-  - Conversations: 3
+  - Requetes RAG: 9        ← Évaluées par RAGAS
+  - Conversations: 3       ← Exclues de RAGAS
 
 Performance:
-  Latence moyenne: 2.41s
+  Latence moyenne: 2.41s   (cible: < 3.0s ✅)
   Temps total: 28.95s
 
 Qualite:
-  Couverture mots-cles: 81.5%
+  Couverture mots-cles: 81.5%  (cible: > 80% ✅)
 
-Scores RAGAS:
-  faithfulness: 0.847
-  answer_relevancy: 0.791
-  context_precision: 0.722
-  context_recall: 0.683
+Scores RAGAS (sur 9 requêtes RAG):
+  faithfulness: 0.847      (pas d'hallucination ✅)
+  answer_relevancy: 0.791  (réponses pertinentes ✅)
+  context_precision: 0.722 (retrieval précis ✅)
+  context_recall: 0.683    (infos complètes, peut être amélioré)
+
+Resultats par categorie:
+  recherche_simple:     4 questions | Latence: 2.56s | Coverage: 91.7%
+  filtres_multiples:    2 questions | Latence: 3.28s | Coverage: 100%
+  recherche_temporelle: 2 questions | Latence: 2.97s | Coverage: 50%
+  recherche_style:      1 question  | Latence: 1.69s | Coverage: 66.7%
+  conversation:         3 questions | Latence: 1.50s | Coverage: 100%
 ```
 
 ### Format du rapport JSON
 
 ```json
 {
-  "timestamp": "2026-01-16T14:30:00",
+  "timestamp": "2026-01-16T21:44:36.342981",
   "num_questions": 12,
   "aggregate_metrics": {
-    "avg_latency_seconds": 2.413,
+    "avg_latency_seconds": 2.412,
     "avg_keyword_coverage": 0.815,
     "total_execution_time": 28.95,
-    "rag_queries": 9,
-    "conversation_queries": 3
+    "rag_queries": 9,           // ← Évaluées par RAGAS
+    "conversation_queries": 3    // ← Exclues de RAGAS
   },
   "ragas_scores": {
+    // Vide si --skip-ragas, sinon:
     "faithfulness": 0.847,
     "answer_relevancy": 0.791,
     "context_precision": 0.722,
@@ -686,24 +883,58 @@ Scores RAGAS:
   "by_category": {
     "recherche_simple": {
       "count": 4,
-      "avg_latency": 2.56,
+      "avg_latency": 2.563,
       "avg_coverage": 0.917
+    },
+    "filtres_multiples": {
+      "count": 2,
+      "avg_latency": 3.279,
+      "avg_coverage": 1.0
+    },
+    "recherche_temporelle": {
+      "count": 2,
+      "avg_latency": 2.970,
+      "avg_coverage": 0.5       // ← À améliorer
+    },
+    "conversation": {
+      "count": 3,
+      "avg_latency": 1.502,     // Plus rapide car pas de retrieval
+      "avg_coverage": 1.0
+    },
+    "recherche_style": {
+      "count": 1,
+      "avg_latency": 1.692,
+      "avg_coverage": 0.667
     }
   },
   "individual_results": [
     {
       "question_id": 1,
-      "question": "Quels concerts de jazz...",
+      "question": "Quels concerts de jazz sont prevus ce weekend a Paris ?",
       "category": "recherche_simple",
-      "latency": 1.47,
-      "used_rag": true,
+      "latency": 1.468,
+      "used_rag": true,          // ← SEARCH mode → RAGAS évalué
       "keywords_found": 3,
       "keywords_total": 3,
+      "coverage": 1.0
+    },
+    {
+      "question_id": 5,
+      "question": "Bonjour, comment ca va ?",
+      "category": "conversation",
+      "latency": 1.982,
+      "used_rag": false,         // ← CHAT mode → RAGAS ignoré
+      "keywords_found": 0,
+      "keywords_total": 0,
       "coverage": 1.0
     }
   ]
 }
 ```
+
+> **Interprétation du champ `used_rag`** :
+> - `true` : La classification a détecté une recherche d'événements → mode SEARCH activé → RAGAS évalue
+> - `false` : La classification a détecté une conversation → mode CHAT → RAGAS ignore (pas de contexte récupéré)
 
 ### Interprétation des scores RAGAS
 

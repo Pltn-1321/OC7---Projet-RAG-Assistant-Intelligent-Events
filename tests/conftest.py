@@ -1,11 +1,15 @@
 """Pytest configuration and shared fixtures."""
 
 import json
+import os
 from pathlib import Path
 from typing import Generator
 
 import pytest
 from pydantic import HttpUrl
+
+# Fix OpenMP library conflict on macOS (faiss + numpy/torch)
+os.environ.setdefault("KMP_DUPLICATE_LIB_OK", "TRUE")
 
 from src.data.models import Coordinates, DateRange, Event, Location
 

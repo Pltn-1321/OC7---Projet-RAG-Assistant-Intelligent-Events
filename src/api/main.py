@@ -1,5 +1,9 @@
 """API FastAPI - Endpoints REST pour le RAG avec memoire conversationnelle."""
 
+# Fix OpenMP duplicate library error on macOS
+import os
+os.environ.setdefault("KMP_DUPLICATE_LIB_OK", "TRUE")
+
 import uuid
 from collections import defaultdict
 from contextlib import asynccontextmanager
