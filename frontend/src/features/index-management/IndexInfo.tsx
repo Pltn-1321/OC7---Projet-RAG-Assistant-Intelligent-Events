@@ -9,6 +9,7 @@ import {
 } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
+import { getErrorMessage } from '@/lib/api/error-types'
 import {
   Database,
   Layers,
@@ -45,7 +46,7 @@ export function IndexInfo() {
         </CardHeader>
         <CardContent>
           <p className="text-sm text-red-300/80 mb-4">
-            {(error as any)?.message || "L'API backend est peut-etre inaccessible."}
+            {getErrorMessage(error, "L'API backend est peut-etre inaccessible.")}
           </p>
           <Button
             variant="outline"

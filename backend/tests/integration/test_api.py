@@ -237,8 +237,6 @@ class TestInputValidation:
     @pytest.mark.integration
     def test_chat_with_invalid_session_id_format(self, client):
         """Test du chat avec un format de session_id non-UUID."""
-        response = client.post(
-            "/chat", json={"query": "Test", "session_id": "not-a-uuid"}
-        )
+        response = client.post("/chat", json={"query": "Test", "session_id": "not-a-uuid"})
         # Devrait accepter (pas de validation stricte du format UUID)
         assert response.status_code in [200, 500]

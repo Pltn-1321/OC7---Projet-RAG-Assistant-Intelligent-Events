@@ -13,6 +13,7 @@ import {
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { getErrorMessage } from '@/lib/api/error-types'
 import { RefreshCw, Loader2, AlertTriangle } from 'lucide-react'
 
 const rebuildSchema = z.object({
@@ -112,9 +113,7 @@ export function RebuildForm({ onRebuildStarted }: RebuildFormProps) {
             <div className="p-4 rounded-lg bg-red-950/30 border border-red-500/30 text-red-300">
               <p className="font-semibold text-sm">Erreur</p>
               <p className="text-sm mt-1">
-                {(rebuildMutation.error as any)?.detail ||
-                  (rebuildMutation.error as any)?.message ||
-                  'Échec du démarrage de la reconstruction'}
+                {getErrorMessage(rebuildMutation.error, 'Échec du démarrage de la reconstruction')}
               </p>
             </div>
           )}

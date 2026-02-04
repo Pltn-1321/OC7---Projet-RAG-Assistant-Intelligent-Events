@@ -10,6 +10,7 @@ import {
 import { Badge } from '@/components/ui/badge'
 import { Progress } from '@/components/ui/progress'
 import { Button } from '@/components/ui/button'
+import { getErrorMessage } from '@/lib/api/error-types'
 import {
   Loader2,
   CheckCircle2,
@@ -89,7 +90,7 @@ export function ProgressTracker({ taskId, onClose }: ProgressTrackerProps) {
             Impossible de recuperer le statut de la tache: {taskId}
           </p>
           <p className="text-xs text-red-400/60 mt-2">
-            {(error as any)?.message || 'Tache introuvable ou expiree'}
+            {getErrorMessage(error, 'Tache introuvable ou expiree')}
           </p>
         </CardContent>
       </Card>

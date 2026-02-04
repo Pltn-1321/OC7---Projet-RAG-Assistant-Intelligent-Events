@@ -1,4 +1,4 @@
-import type { DocumentResult } from '@/lib/api/types'
+import type { DocumentResult, Location, DateRange } from '@/lib/api/types'
 import {
   Accordion,
   AccordionContent,
@@ -12,6 +12,39 @@ import { Calendar, MapPin, Tag, Target } from 'lucide-react'
 
 interface SourcesAccordionProps {
   sources: DocumentResult[]
+}
+
+// Type guards for metadata fields
+function isLocation(value: unknown): value is Location {
+  return (
+    typeof value === 'object' &&
+    value !== null &&
+    'city' in value &&
+    typeof (value as Location).city === 'string'
+  )
+}
+
+function isDateRange(value: unknown): value is DateRange {
+  return (
+    typeof value === 'object' &&
+    value !== null &&
+    'start' in value &&
+    'end' in value &&
+    typeof (value as DateRange).start === 'string' &&
+    typeof (value as DateRange).end === 'string'
+  )
+}
+
+function isString(value: unknown): value is string {
+  return typeof value === 'string'
+}
+
+function isNumber(value: unknown): value is number {
+  return typeof value === 'number'
+}
+
+function isBoolean(value: unknown): value is boolean {
+  return typeof value === 'boolean'
 }
 
 export function SourcesAccordion({ sources }: SourcesAccordionProps) {
@@ -30,12 +63,12 @@ export function SourcesAccordion({ sources }: SourcesAccordionProps) {
             <div className="space-y-3">
               {sources.map((source, index) => {
                 const metadata = source.metadata || {}
-                const title = metadata.title || source.title || 'Sans titre'
-                const category = metadata.category
-                const location = metadata.location
-                const dateRange = metadata.date_range
-                const price = metadata.price
-                const isFree = metadata.is_free
+                const title = (isString(metadata.title) ? metadata.title : null) || source.title || 'Sans titre'
+                const category = isString(metadata.category) ? metadata.category : undefined
+                const location = isLocation(metadata.location) ? metadata.location : undefined
+                const dateRange = isDateRange(metadata.date_range) ? metadata.date_range : undefined
+                const price = isNumber(metadata.price) ? metadata.price : undefined
+                const isFree = isBoolean(metadata.is_free) ? metadata.is_free : undefined
 
                 return (
                   <div

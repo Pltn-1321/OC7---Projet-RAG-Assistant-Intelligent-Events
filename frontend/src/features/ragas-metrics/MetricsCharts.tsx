@@ -30,6 +30,27 @@ const COLORS = {
 // Target threshold for latency
 const TARGET_LATENCY_SECONDS = 3.0
 
+// Custom tooltip component - declared outside render to prevent recreation
+interface LatencyTooltipProps {
+  active?: boolean
+  payload?: Array<{ payload: { question: string; latency: number } }>
+}
+
+const LatencyTooltip = ({ active, payload }: LatencyTooltipProps) => {
+  if (active && payload && payload.length) {
+    const data = payload[0].payload
+    return (
+      <div className="bg-white border border-mediterranean-azure/20 rounded-lg shadow-lg p-3">
+        <p className="text-sm text-mediterranean-navy font-medium mb-1">{data.question}</p>
+        <p className="text-sm text-mediterranean-navy/70">
+          Latence: <span className="font-semibold">{data.latency.toFixed(2)}s</span>
+        </p>
+      </div>
+    )
+  }
+  return null
+}
+
 export function MetricsCharts() {
   const { report } = useRagasStore()
 
@@ -71,22 +92,6 @@ export function MetricsCharts() {
     { name: 'Succes', value: successCount, color: COLORS.success },
     { name: 'Echec', value: failureCount, color: COLORS.failure },
   ]
-
-  // Custom tooltip for bar chart
-  const LatencyTooltip = ({ active, payload }: { active?: boolean; payload?: Array<{ payload: { question: string; latency: number } }> }) => {
-    if (active && payload && payload.length) {
-      const data = payload[0].payload
-      return (
-        <div className="bg-white border border-mediterranean-azure/20 rounded-lg shadow-lg p-3">
-          <p className="text-sm text-mediterranean-navy font-medium mb-1">{data.question}</p>
-          <p className="text-sm text-mediterranean-navy/70">
-            Latence: <span className="font-semibold">{data.latency.toFixed(2)}s</span>
-          </p>
-        </div>
-      )
-    }
-    return null
-  }
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

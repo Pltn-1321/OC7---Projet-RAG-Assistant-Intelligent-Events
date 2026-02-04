@@ -166,7 +166,8 @@ def print_next_steps():
     print("\n" + "=" * 70)
     print("NEXT STEPS")
     print("=" * 70)
-    print("""
+    print(
+        """
 To run Alembic migrations:
 
 1. View current database version:
@@ -187,7 +188,8 @@ To run Alembic migrations:
 For more information, see:
 - backend/alembic/README.md
 - backend/alembic/QUICKSTART.md
-""")
+"""
+    )
 
 
 def main():

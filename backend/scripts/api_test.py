@@ -58,9 +58,7 @@ class APITester:
         print(f"\n{Colors.CYAN}[TEST]{Colors.RESET} {method} {endpoint}")
         print(f"       {description}")
 
-    def _print_result(
-        self, success: bool, message: str, details: dict | None = None
-    ) -> None:
+    def _print_result(self, success: bool, message: str, details: dict | None = None) -> None:
         """Affiche le resultat d'un test."""
         icon = f"{Colors.GREEN}PASS{Colors.RESET}" if success else f"{Colors.RED}FAIL{Colors.RESET}"
         print(f"       [{icon}] {message}")
@@ -200,9 +198,7 @@ class APITester:
         if success:
             same_session = data.get("session_id") == self.session_id
             num_sources = len(data.get("sources", []))
-            self._print_result(
-                True, f"Session maintenue: {same_session}, Sources: {num_sources}"
-            )
+            self._print_result(True, f"Session maintenue: {same_session}, Sources: {num_sources}")
             self.results.append({"test": "chat_session", "passed": True})
         else:
             self._print_result(False, f"Erreur ({status})")
@@ -254,9 +250,7 @@ class APITester:
         """Test /rebuild sans authentification."""
         self._print_test("POST", "/rebuild", "Sans authentification (doit echouer)")
 
-        success, status, data = self._request(
-            "POST", "/rebuild", expected_status=[401, 500]
-        )
+        success, status, data = self._request("POST", "/rebuild", expected_status=[401, 500])
 
         if success:
             self._print_result(True, f"Acces refuse correctement ({status})")

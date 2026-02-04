@@ -10,6 +10,7 @@ Usage:
 
 # Fix OpenMP duplicate library error on macOS
 import os
+
 os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
 
 import sys

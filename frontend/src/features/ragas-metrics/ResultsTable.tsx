@@ -25,6 +25,25 @@ type SortDirection = 'asc' | 'desc'
 
 const ITEMS_PER_PAGE = 10
 
+// SortButton component - declared outside render to prevent recreation
+interface SortButtonProps {
+  field: SortField
+  children: React.ReactNode
+  onClick: (field: SortField) => void
+}
+
+const SortButton = ({ field, children, onClick }: SortButtonProps) => (
+  <Button
+    variant="ghost"
+    size="sm"
+    onClick={() => onClick(field)}
+    className="h-8 flex items-center gap-1 text-mediterranean-navy/70 hover:text-mediterranean-navy"
+  >
+    {children}
+    <ArrowUpDown className="h-3 w-3" />
+  </Button>
+)
+
 export function ResultsTable() {
   const { report } = useRagasStore()
   const [sortField, setSortField] = useState<SortField>('latency')
@@ -71,18 +90,6 @@ export function ResultsTable() {
 
   const totalPages = Math.ceil(sortedData.length / ITEMS_PER_PAGE)
 
-  const SortButton = ({ field, children }: { field: SortField; children: React.ReactNode }) => (
-    <Button
-      variant="ghost"
-      size="sm"
-      onClick={() => handleSort(field)}
-      className="h-8 flex items-center gap-1 text-mediterranean-navy/70 hover:text-mediterranean-navy"
-    >
-      {children}
-      <ArrowUpDown className="h-3 w-3" />
-    </Button>
-  )
-
   const getMetricBadgeColor = (value: number, target: number, inverse = false) => {
     const meetsTarget = inverse ? value <= target : value >= target
     return meetsTarget ? 'success' : 'destructive'
@@ -116,19 +123,19 @@ export function ResultsTable() {
             <TableHeader>
               <TableRow className="bg-mediterranean-sky/20 hover:bg-mediterranean-sky/30">
                 <TableHead className="w-[40%]">
-                  <SortButton field="question">Question</SortButton>
+                  <SortButton field="question" onClick={handleSort}>Question</SortButton>
                 </TableHead>
                 <TableHead className="w-[15%]">
-                  <SortButton field="latency">Latence</SortButton>
+                  <SortButton field="latency" onClick={handleSort}>Latence</SortButton>
                 </TableHead>
                 <TableHead className="w-[15%]">
-                  <SortButton field="relevance">Pertinence</SortButton>
+                  <SortButton field="relevance" onClick={handleSort}>Pertinence</SortButton>
                 </TableHead>
                 <TableHead className="w-[15%]">
-                  <SortButton field="coverage">Couverture</SortButton>
+                  <SortButton field="coverage" onClick={handleSort}>Couverture</SortButton>
                 </TableHead>
                 <TableHead className="w-[15%] text-center">
-                  <SortButton field="success">Statut</SortButton>
+                  <SortButton field="success" onClick={handleSort}>Statut</SortButton>
                 </TableHead>
               </TableRow>
             </TableHeader>

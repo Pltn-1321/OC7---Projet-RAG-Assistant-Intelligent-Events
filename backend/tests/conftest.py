@@ -137,9 +137,9 @@ def mock_faiss_index(tmp_path: Path) -> Path:
 # Markers
 def pytest_configure(config):
     """Configure pytest with custom markers."""
-    config.addinivalue_line("markers", "slow: marks tests as slow (deselect with '-m \"not slow\"')")
+    config.addinivalue_line(
+        "markers", "slow: marks tests as slow (deselect with '-m \"not slow\"')"
+    )
     config.addinivalue_line("markers", "integration: marks tests as integration tests")
     config.addinivalue_line("markers", "e2e: marks tests as end-to-end tests")
-    config.addinivalue_line(
-        "markers", "requires_api: marks tests that require API credentials"
-    )
+    config.addinivalue_line("markers", "requires_api: marks tests that require API credentials")

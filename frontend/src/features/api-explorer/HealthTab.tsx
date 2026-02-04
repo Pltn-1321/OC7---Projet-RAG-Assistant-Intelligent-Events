@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { ResponseViewer } from "@/components/common/ResponseViewer"
+import { getErrorMessage } from "@/lib/api/error-types"
 import { Activity, Loader2 } from "lucide-react"
 
 export function HealthTab() {
@@ -42,7 +43,7 @@ export function HealthTab() {
           {error && (
             <div className="p-4 rounded-md bg-red-900/20 border border-red-900 text-red-200">
               <p className="font-semibold">Error</p>
-              <p className="text-sm">{(error as any).detail || "Failed to fetch health status"}</p>
+              <p className="text-sm">{getErrorMessage(error, "Failed to fetch health status")}</p>
             </div>
           )}
 

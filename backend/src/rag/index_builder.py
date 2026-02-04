@@ -98,9 +98,7 @@ class IndexBuilder:
 
                 # Progress from 15% to 70% during embedding generation
                 progress = 0.15 + (min(i + batch_size, total) / total) * 0.55
-                self._report_progress(
-                    f"Embeddings: {min(i + batch_size, total)}/{total}", progress
-                )
+                self._report_progress(f"Embeddings: {min(i + batch_size, total)}/{total}", progress)
 
         self._report_progress("Construction de l'index FAISS terminée", 0.75)
 

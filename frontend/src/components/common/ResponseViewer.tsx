@@ -1,7 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 
 interface ResponseViewerProps {
-  data: any
+  data: unknown
   title?: string
 }
 

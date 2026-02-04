@@ -17,6 +17,7 @@ import { MessageInput } from './MessageInput'
 import { useChatStore } from '@/store/useChatStore'
 import { api } from '@/lib/api/endpoints'
 import { truncate } from '@/lib/utils/format'
+import { getErrorMessage } from '@/lib/api/error-types'
 import { Trash2, Plus, Settings2 } from 'lucide-react'
 
 export function ChatView() {
@@ -61,10 +62,10 @@ export function ChatView() {
         },
       ])
     },
-    onError: (error: any) => {
+    onError: (error: unknown) => {
       console.error('Chat error:', error)
       // Add error message to chat
-      const errorMessage = error?.response?.data?.detail || error?.message || 'Erreur de connexion au serveur. Vérifiez que le backend est lancé.'
+      const errorMessage = getErrorMessage(error, 'Erreur de connexion au serveur. Vérifiez que le backend est lancé.')
       setMessages((prev) => [
         ...prev,
         {
@@ -84,7 +85,7 @@ export function ChatView() {
       setMessages([])
       setShowClearDialog(false)
     },
-    onError: (error: any) => {
+    onError: (error: unknown) => {
       console.error('Delete session error:', error)
     },
   })

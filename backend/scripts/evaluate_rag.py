@@ -47,9 +47,7 @@ def calculate_keyword_coverage(answer: str, expected_keywords: list[str]) -> dic
     }
 
 
-def run_rag_queries(
-    questions: list[EvaluationQuestion], top_k: int = 5
-) -> list[dict]:
+def run_rag_queries(questions: list[EvaluationQuestion], top_k: int = 5) -> list[dict]:
     """Execute les requetes RAG et collecte les resultats."""
     from src.rag.engine import RAGEngine
 
@@ -101,7 +99,9 @@ def run_rag_queries(
         results.append(result)
 
         # Afficher les resultats intermediaires
-        print(f"   Latence: {latency:.2f}s | RAG: {used_rag} | Keywords: {keyword_metrics['coverage']:.0%}")
+        print(
+            f"   Latence: {latency:.2f}s | RAG: {used_rag} | Keywords: {keyword_metrics['coverage']:.0%}"
+        )
 
     return results
 
@@ -138,7 +138,10 @@ def run_ragas_evaluation(results: list[dict]) -> dict:
         "question": [r["question"] for r in rag_results],
         "answer": [r["answer"] for r in rag_results],
         "contexts": [r["contexts"] for r in rag_results],
-        "ground_truth": [" ".join(r["expected_keywords"]) if r["expected_keywords"] else r["question"] for r in rag_results],
+        "ground_truth": [
+            " ".join(r["expected_keywords"]) if r["expected_keywords"] else r["question"]
+            for r in rag_results
+        ],
     }
 
     dataset = Dataset.from_dict(dataset_dict)
@@ -170,7 +173,9 @@ def generate_report(
     avg_latency = total_latency / len(results)
 
     keyword_coverages = [r["coverage"] for r in results if r["expected_keywords"]]
-    avg_keyword_coverage = sum(keyword_coverages) / len(keyword_coverages) if keyword_coverages else 1.0
+    avg_keyword_coverage = (
+        sum(keyword_coverages) / len(keyword_coverages) if keyword_coverages else 1.0
+    )
 
     rag_used_count = sum(1 for r in results if r["used_rag"])
     conversation_count = len(results) - rag_used_count
@@ -199,10 +204,11 @@ def generate_report(
             "rag_queries": rag_used_count,
             "conversation_queries": conversation_count,
         },
-        "ragas_scores": {
-            k: round(v, 3) if isinstance(v, (int, float)) else v
-            for k, v in ragas_scores.items()
-        } if ragas_scores else {},
+        "ragas_scores": (
+            {k: round(v, 3) if isinstance(v, (int, float)) else v for k, v in ragas_scores.items()}
+            if ragas_scores
+            else {}
+        ),
         "by_category": {
             cat: {
                 "count": stats["count"],

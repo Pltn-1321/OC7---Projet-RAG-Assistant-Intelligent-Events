@@ -91,8 +91,10 @@ class TestRAGEngineProperties:
             json.dump(documents, f)
 
         # Mock LangChain components
-        with patch("src.rag.engine.get_embeddings") as mock_emb, \
-             patch("src.rag.engine.get_llm") as mock_llm:
+        with (
+            patch("src.rag.engine.get_embeddings") as mock_emb,
+            patch("src.rag.engine.get_llm") as mock_llm,
+        ):
 
             # Mock embeddings
             mock_embeddings = MagicMock()
@@ -305,8 +307,10 @@ class TestLangChainComponents:
         with open(documents_path, "w") as f:
             json.dump(documents, f)
 
-        with patch("src.rag.engine.get_embeddings") as mock_emb, \
-             patch("src.rag.engine.get_llm") as mock_llm:
+        with (
+            patch("src.rag.engine.get_embeddings") as mock_emb,
+            patch("src.rag.engine.get_llm") as mock_llm,
+        ):
 
             mock_embeddings = MagicMock()
             mock_embeddings.embed_query.return_value = np.random.rand(dimension).tolist()
@@ -351,8 +355,10 @@ class TestLangChainComponents:
         with open(documents_path, "w") as f:
             json.dump(documents, f)
 
-        with patch("src.rag.engine.get_embeddings") as mock_emb, \
-             patch("src.rag.engine.get_llm") as mock_llm:
+        with (
+            patch("src.rag.engine.get_embeddings") as mock_emb,
+            patch("src.rag.engine.get_llm") as mock_llm,
+        ):
 
             mock_embeddings = MagicMock()
             mock_embeddings.embed_query.return_value = np.random.rand(dimension).tolist()

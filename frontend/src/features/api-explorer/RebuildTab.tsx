@@ -11,6 +11,7 @@ import { Progress } from "@/components/ui/progress"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { ResponseViewer } from "@/components/common/ResponseViewer"
+import { getErrorMessage } from "@/lib/api/error-types"
 import { RefreshCw, Loader2, CheckCircle2, XCircle, AlertTriangle } from "lucide-react"
 import type { RebuildStatusResponse } from "@/lib/api/types"
 
@@ -132,7 +133,7 @@ export function RebuildTab() {
             <div className="mt-4 p-4 rounded-md bg-red-900/20 border border-red-900 text-red-200">
               <p className="font-semibold">Erreur</p>
               <p className="text-sm">
-                {(rebuildMutation.error as any).detail || "Échec du démarrage de la reconstruction"}
+                {getErrorMessage(rebuildMutation.error, "Échec du démarrage de la reconstruction")}
               </p>
             </div>
           )}
@@ -194,7 +195,7 @@ export function RebuildTab() {
             <div className="mt-4 p-4 rounded-md bg-red-900/20 border border-red-900 text-red-200">
               <p className="font-semibold">Erreur</p>
               <p className="text-sm">
-                {(statusMutation.error as any).detail || "Échec de la récupération du statut"}
+                {getErrorMessage(statusMutation.error, "Échec de la récupération du statut")}
               </p>
             </div>
           )}

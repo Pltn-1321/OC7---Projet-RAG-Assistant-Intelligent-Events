@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { ResponseViewer } from "@/components/common/ResponseViewer"
+import { getErrorMessage } from "@/lib/api/error-types"
 import { MessageSquare, Loader2 } from "lucide-react"
 
 const chatSchema = z.object({
@@ -106,7 +107,7 @@ export function ChatTab() {
           {error && (
             <div className="mt-4 p-4 rounded-md bg-red-900/20 border border-red-900 text-red-200">
               <p className="font-semibold">Error</p>
-              <p className="text-sm">{(error as any).detail || "Chat request failed"}</p>
+              <p className="text-sm">{getErrorMessage(error, "Chat request failed")}</p>
             </div>
           )}
         </CardContent>

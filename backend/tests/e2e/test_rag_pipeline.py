@@ -19,9 +19,7 @@ class TestRAGPipeline:
 
     def test_search_returns_relevant_results(self, client):
         """Test que la recherche retourne des resultats semantiquement pertinents."""
-        response = client.post(
-            "/search", json={"query": "concert de musique", "top_k": 5}
-        )
+        response = client.post("/search", json={"query": "concert de musique", "top_k": 5})
 
         if response.status_code != 200:
             pytest.skip("RAG engine non disponible")
@@ -84,12 +82,8 @@ class TestRAGPipeline:
         session_id = response1.json()["session_id"]
 
         # Ajouter des messages
-        client.post(
-            "/chat", json={"query": "Quels evenements?", "session_id": session_id}
-        )
-        client.post(
-            "/chat", json={"query": "Merci!", "session_id": session_id}
-        )
+        client.post("/chat", json={"query": "Quels evenements?", "session_id": session_id})
+        client.post("/chat", json={"query": "Merci!", "session_id": session_id})
 
         # Recuperer l'historique
         response2 = client.get(f"/session/{session_id}")
@@ -147,9 +141,7 @@ class TestSearchQuality:
 
     def test_search_music_events(self, client):
         """Test de recherche d'evenements musicaux."""
-        response = client.post(
-            "/search", json={"query": "concert musique live", "top_k": 5}
-        )
+        response = client.post("/search", json={"query": "concert musique live", "top_k": 5})
 
         if response.status_code != 200:
             pytest.skip("RAG engine non disponible")
@@ -161,9 +153,7 @@ class TestSearchQuality:
 
     def test_search_art_exhibitions(self, client):
         """Test de recherche d'expositions."""
-        response = client.post(
-            "/search", json={"query": "exposition art peinture", "top_k": 5}
-        )
+        response = client.post("/search", json={"query": "exposition art peinture", "top_k": 5})
 
         if response.status_code != 200:
             pytest.skip("RAG engine non disponible")
@@ -173,9 +163,7 @@ class TestSearchQuality:
 
     def test_search_free_events(self, client):
         """Test de recherche d'evenements gratuits."""
-        response = client.post(
-            "/search", json={"query": "evenement gratuit", "top_k": 5}
-        )
+        response = client.post("/search", json={"query": "evenement gratuit", "top_k": 5})
 
         if response.status_code != 200:
             pytest.skip("RAG engine non disponible")
@@ -185,9 +173,7 @@ class TestSearchQuality:
 
     def test_search_by_location(self, client):
         """Test de recherche par lieu."""
-        response = client.post(
-            "/search", json={"query": "evenements a Marseille", "top_k": 5}
-        )
+        response = client.post("/search", json={"query": "evenements a Marseille", "top_k": 5})
 
         if response.status_code != 200:
             pytest.skip("RAG engine non disponible")
@@ -217,9 +203,7 @@ class TestChatQuality:
 
     def test_chat_provides_sources_for_search(self, client):
         """Test que le chat fournit des sources pour les recherches."""
-        response = client.post(
-            "/chat", json={"query": "Quels concerts sont disponibles?"}
-        )
+        response = client.post("/chat", json={"query": "Quels concerts sont disponibles?"})
 
         if response.status_code != 200:
             pytest.skip("RAG engine non disponible")

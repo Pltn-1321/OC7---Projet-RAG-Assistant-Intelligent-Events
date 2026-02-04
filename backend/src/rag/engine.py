@@ -96,27 +96,33 @@ class RAGEngine:
 
     def _build_classification_chain(self):
         """Build the query classification chain (SEARCH vs CHAT)."""
-        prompt = ChatPromptTemplate.from_messages([
-            ("human", CLASSIFICATION_PROMPT_TEMPLATE),
-        ])
+        prompt = ChatPromptTemplate.from_messages(
+            [
+                ("human", CLASSIFICATION_PROMPT_TEMPLATE),
+            ]
+        )
         return prompt | self._classification_llm | StrOutputParser()
 
     def _build_conversation_chain(self):
         """Build the non-RAG conversation chain."""
-        prompt = ChatPromptTemplate.from_messages([
-            ("system", CONVERSATION_SYSTEM_PROMPT),
-            MessagesPlaceholder(variable_name="history"),
-            ("human", "{query}"),
-        ])
+        prompt = ChatPromptTemplate.from_messages(
+            [
+                ("system", CONVERSATION_SYSTEM_PROMPT),
+                MessagesPlaceholder(variable_name="history"),
+                ("human", "{query}"),
+            ]
+        )
         return prompt | self._llm | StrOutputParser()
 
     def _build_rag_chain(self):
         """Build the RAG chain with context injection."""
-        prompt = ChatPromptTemplate.from_messages([
-            ("system", RAG_SYSTEM_PROMPT_TEMPLATE),
-            MessagesPlaceholder(variable_name="history"),
-            ("human", "{query}"),
-        ])
+        prompt = ChatPromptTemplate.from_messages(
+            [
+                ("system", RAG_SYSTEM_PROMPT_TEMPLATE),
+                MessagesPlaceholder(variable_name="history"),
+                ("human", "{query}"),
+            ]
+        )
         return prompt | self._llm | StrOutputParser()
 
     def _convert_history(self, history: list[dict] | None) -> list:
@@ -215,16 +221,18 @@ class RAGEngine:
             results = []
             for doc, score in docs_with_scores:
                 # Convert LangChain Document to expected format
-                results.append({
-                    "document": {
-                        "id": doc.metadata.get("id", ""),
-                        "title": doc.metadata.get("title", ""),
-                        "content": doc.page_content,
-                        "metadata": doc.metadata,
-                    },
-                    "similarity": float(1 - score),  # L2 distance to similarity
-                    "distance": float(score),
-                })
+                results.append(
+                    {
+                        "document": {
+                            "id": doc.metadata.get("id", ""),
+                            "title": doc.metadata.get("title", ""),
+                            "content": doc.page_content,
+                            "metadata": doc.metadata,
+                        },
+                        "similarity": float(1 - score),  # L2 distance to similarity
+                        "distance": float(score),
+                    }
+                )
             return results
         else:
             # Legacy: use raw FAISS index
@@ -235,11 +243,13 @@ class RAGEngine:
             for idx, dist in zip(indices[0], distances[0]):
                 if idx < len(self.documents):
                     doc = self.documents[idx]
-                    results.append({
-                        "document": doc,
-                        "similarity": float(1 - dist),
-                        "distance": float(dist),
-                    })
+                    results.append(
+                        {
+                            "document": doc,
+                            "similarity": float(1 - dist),
+                            "distance": float(dist),
+                        }
+                    )
             return results
 
     def generate_response(
@@ -260,11 +270,13 @@ class RAGEngine:
         """
         context = self._format_context(results)
         messages = self._convert_history(history)
-        return self._rag_chain.invoke({
-            "context": context,
-            "query": query,
-            "history": messages,
-        })
+        return self._rag_chain.invoke(
+            {
+                "context": context,
+                "query": query,
+                "history": messages,
+            }
+        )
 
     def chat(
         self,
