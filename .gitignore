@@ -1,5 +1,26 @@
+# =============================================================================
+# RAG Events Assistant - Monorepo .gitignore
+# =============================================================================
+
+# =============================================================================
+# Root Level
+# =============================================================================
+.env
+.env.local
+.env.*.local
+*.key
+*.pem
+secrets/
+.DS_Store
+*.log
+
+# =============================================================================
+# Backend (Python)
+# =============================================================================
+
 # Python
-__pycache__/
+backend/__pycache__/
+backend/**/__pycache__/
 *.py[cod]
 *$py.class
 *.so
@@ -23,62 +44,99 @@ share/python-wheels/
 MANIFEST
 
 # Virtual environments
-venv/
-env/
-ENV/
-.venv/
-.env.local
+backend/.venv/
+backend/venv/
+backend/env/
+backend/ENV/
 
-# UV
-.venv/
-uv.lock
+# UV lock file (keep in version control for reproducibility)
+# backend/uv.lock
 
 # Data (IMPORTANT - never commit data files)
-data/*
-!data/.gitkeep
-!data/raw/.gitkeep
-!data/processed/.gitkeep
-!data/indexes/.gitkeep
+backend/data/*
+!backend/data/.gitkeep
+!backend/data/raw/.gitkeep
+!backend/data/processed/.gitkeep
+!backend/data/indexes/.gitkeep
 
 # Allow test data
-!tests/data/test_questions.json
-!tests/data/sample_events.json
+!backend/tests/data/test_questions.json
+!backend/tests/data/sample_events.json
 
 # But exclude generated test results
-tests/data/evaluation_results.json
-
-# Large data files
-*.json
-*.csv
-*.parquet
-!pyproject.toml
-!package.json
-!tsconfig.json
-
-# Secrets (CRITICAL - never commit secrets)
-.env
-.env.local
-.env.*.local
-*.key
-*.pem
-secrets/
+backend/tests/data/evaluation_results.json
 
 # Logs
-logs/*
-!logs/.gitkeep
-*.log
+backend/logs/*
+!backend/logs/.gitkeep
 
-# OS files
-.DS_Store
-.DS_Store?
-._*
-.Spotlight-V100
-.Trashes
-ehthumbs.db
-Thumbs.db
-*~
+# Personal documentation
+backend/docs/doc-perso/
 
-# IDE
+# mypy
+backend/.mypy_cache/
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# Pytest
+backend/.pytest_cache/
+.pytest_cache/
+.coverage
+.coverage.*
+
+# Coverage reports
+backend/htmlcov/
+htmlcov/
+.tox/
+.nox/
+coverage.xml
+*.cover
+*.py,cover
+.hypothesis/
+
+# Ruff
+backend/.ruff_cache/
+.ruff_cache/
+
+# Jupyter
+.ipynb_checkpoints
+*/.ipynb_checkpoints/*
+profile_default/
+ipython_config.py
+
+# Model files (large)
+*.bin
+*.onnx
+*.pt
+*.pth
+*.h5
+# Keep FAISS indexes
+!backend/data/indexes/*.pkl
+
+# =============================================================================
+# Frontend (Node.js/React)
+# =============================================================================
+
+# Dependencies
+frontend/node_modules/
+node_modules/
+
+# Build output
+frontend/dist/
+
+# Environment
+frontend/.env
+frontend/.env.local
+frontend/.env.*.local
+
+# Logs
+frontend/npm-debug.log*
+frontend/yarn-debug.log*
+frontend/yarn-error.log*
+frontend/pnpm-debug.log*
+
+# Editor
 .vscode/
 .idea/
 *.swp
@@ -90,118 +148,39 @@ Thumbs.db
 *.sublime-project
 *.sublime-workspace
 
-# Jupyter Notebook
-.ipynb_checkpoints
-*/.ipynb_checkpoints/*
-
-# IPython
-profile_default/
-ipython_config.py
-
-# PyCharm
-.idea/
-
-# mypy
-.mypy_cache/
-.dmypy.json
-dmypy.json
-
-# Pyre type checker
-.pyre/
-
-# pytype static type analyzer
-.pytype/
-
-# Cython debug symbols
-cython_debug/
-
-# Coverage reports
-htmlcov/
-.tox/
-.nox/
-.coverage
-.coverage.*
-.cache
-nosetests.xml
-coverage.xml
-*.cover
-*.py,cover
-.hypothesis/
-.pytest_cache/
-cover/
-
-# Translations
-*.mo
-*.pot
-
-# Django stuff
-*.log
-local_settings.py
-db.sqlite3
-db.sqlite3-journal
-
-# Flask stuff
-instance/
-.webassets-cache
-
-# Scrapy stuff
-.scrapy
-
-# Sphinx documentation
-docs/_build/
-
-# PyBuilder
-.pybuilder/
-target/
-
-# Celery stuff
-celerybeat-schedule
-celerybeat.pid
-
-# SageMath parsed files
-*.sage.py
-
-# Environments
-.env
-.venv
-env/
-venv/
-ENV/
-env.bak/
-venv.bak/
-
-# mkdocs documentation
-/site
-
-# Ruff
-.ruff_cache/
-
-# LSP
-pyrightconfig.json
-
-# Mac
+# OS
 .DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+*~
 
-# Model files (large)
-*.bin
-*.onnx
-*.pt
-*.pth
-*.h5
-*.pkl
-!data/indexes/*.pkl
+# TypeScript
+*.tsbuildinfo
 
-# Temporary files
+# Testing
+frontend/coverage/
+
+# =============================================================================
+# Temporary & Backup
+# =============================================================================
 tmp/
 temp/
 *.tmp
-
-# Backup files
 *.bak
 *.backup
 
-# Video files (for demo backup)
+# Large files
 *.mp4
 *.avi
 *.mov
-!docs/presentation/video_backup/.gitkeep
+
+# =============================================================================
+# IDE & Tools
+# =============================================================================
+.vscode/
+.idea/
+pyrightconfig.json

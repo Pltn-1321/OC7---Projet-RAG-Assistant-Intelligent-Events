@@ -1,0 +1,161 @@
+{
+  "timestamp": "2026-01-16T21:44:36.342981",
+  "num_questions": 12,
+  "aggregate_metrics": {
+    "avg_latency_seconds": 2.412,
+    "avg_keyword_coverage": 0.815,
+    "total_execution_time": 28.95,
+    "rag_queries": 9,
+    "conversation_queries": 3
+  },
+  "ragas_scores": {},
+  "by_category": {
+    "recherche_simple": {
+      "count": 4,
+      "avg_latency": 2.563,
+      "avg_coverage": 0.917
+    },
+    "filtres_multiples": {
+      "count": 2,
+      "avg_latency": 3.279,
+      "avg_coverage": 1.0
+    },
+    "recherche_temporelle": {
+      "count": 2,
+      "avg_latency": 2.97,
+      "avg_coverage": 0.5
+    },
+    "conversation": {
+      "count": 3,
+      "avg_latency": 1.502,
+      "avg_coverage": 1.0
+    },
+    "recherche_style": {
+      "count": 1,
+      "avg_latency": 1.692,
+      "avg_coverage": 0.667
+    }
+  },
+  "individual_results": [
+    {
+      "question_id": 1,
+      "question": "Quels concerts de jazz sont prevus ce weekend a Paris ?",
+      "category": "recherche_simple",
+      "latency": 1.468,
+      "used_rag": true,
+      "keywords_found": 3,
+      "keywords_total": 3,
+      "coverage": 1.0
+    },
+    {
+      "question_id": 2,
+      "question": "Y a-t-il des evenements gratuits pour enfants dimanche ?",
+      "category": "filtres_multiples",
+      "latency": 3.884,
+      "used_rag": true,
+      "keywords_found": 3,
+      "keywords_total": 3,
+      "coverage": 1.0
+    },
+    {
+      "question_id": 3,
+      "question": "Je cherche une exposition d'art contemporain a Marseille",
+      "category": "recherche_simple",
+      "latency": 3.151,
+      "used_rag": true,
+      "keywords_found": 3,
+      "keywords_total": 3,
+      "coverage": 1.0
+    },
+    {
+      "question_id": 4,
+      "question": "Quels spectacles de theatre sont disponibles cette semaine ?",
+      "category": "recherche_temporelle",
+      "latency": 3.165,
+      "used_rag": true,
+      "keywords_found": 2,
+      "keywords_total": 3,
+      "coverage": 0.667
+    },
+    {
+      "question_id": 5,
+      "question": "Bonjour, comment ca va ?",
+      "category": "conversation",
+      "latency": 1.982,
+      "used_rag": false,
+      "keywords_found": 0,
+      "keywords_total": 0,
+      "coverage": 1.0
+    },
+    {
+      "question_id": 6,
+      "question": "Merci beaucoup pour ton aide !",
+      "category": "conversation",
+      "latency": 1.166,
+      "used_rag": false,
+      "keywords_found": 0,
+      "keywords_total": 0,
+      "coverage": 1.0
+    },
+    {
+      "question_id": 7,
+      "question": "Que faire ce soir a Marseille ?",
+      "category": "recherche_simple",
+      "latency": 2.615,
+      "used_rag": true,
+      "keywords_found": 2,
+      "keywords_total": 2,
+      "coverage": 1.0
+    },
+    {
+      "question_id": 8,
+      "question": "Des festivals de musique cet ete ?",
+      "category": "recherche_temporelle",
+      "latency": 2.775,
+      "used_rag": true,
+      "keywords_found": 1,
+      "keywords_total": 3,
+      "coverage": 0.333
+    },
+    {
+      "question_id": 9,
+      "question": "Activites culturelles gratuites le weekend",
+      "category": "filtres_multiples",
+      "latency": 2.673,
+      "used_rag": true,
+      "keywords_found": 3,
+      "keywords_total": 3,
+      "coverage": 1.0
+    },
+    {
+      "question_id": 10,
+      "question": "Concerts electro ou techno a Lyon",
+      "category": "recherche_style",
+      "latency": 1.692,
+      "used_rag": true,
+      "keywords_found": 2,
+      "keywords_total": 3,
+      "coverage": 0.667
+    },
+    {
+      "question_id": 11,
+      "question": "Tu peux m'aider a trouver des sorties ?",
+      "category": "conversation",
+      "latency": 1.359,
+      "used_rag": false,
+      "keywords_found": 0,
+      "keywords_total": 0,
+      "coverage": 1.0
+    },
+    {
+      "question_id": 12,
+      "question": "Ateliers creatifs pour adultes",
+      "category": "recherche_simple",
+      "latency": 3.017,
+      "used_rag": true,
+      "keywords_found": 2,
+      "keywords_total": 3,
+      "coverage": 0.667
+    }
+  ]
+}

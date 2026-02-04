@@ -1,0 +1,40 @@
+@import "tailwindcss";
+@config "../tailwind.config.js";
+
+@layer base {
+  #root {
+    width: 100%;
+    min-height: 100vh;
+  }
+
+  :root {
+    --background: 244 232 216; /* sand */
+    --foreground: 10 47 81;    /* navy */
+    --card: 255 255 255;
+    --card-foreground: 10 47 81;
+    --popover: 255 255 255;
+    --popover-foreground: 10 47 81;
+    --primary: 14 124 123;     /* azure */
+    --primary-foreground: 244 232 216;
+    --secondary: 155 222 223;  /* sky */
+    --secondary-foreground: 10 47 81;
+    --muted: 240 240 240;
+    --muted-foreground: 100 116 139;
+    --accent: 244 162 97;      /* ochre */
+    --accent-foreground: 10 47 81;
+    --destructive: 231 111 81; /* terracotta */
+    --destructive-foreground: 255 255 255;
+    --border: 226 232 240;
+    --input: 226 232 240;
+    --ring: 14 124 123;
+    --radius: 0.5rem;
+  }
+
+  body {
+    background-color: rgb(var(--background));
+    color: rgb(var(--foreground));
+    font-family: Inter, system-ui, sans-serif;
+    margin: 0;
+    min-height: 100vh;
+  }
+}

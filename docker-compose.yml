@@ -1,27 +1,79 @@
 # =============================================================================
-# RAG Events Assistant - Docker Compose
+# RAG Events Assistant - Monorepo Docker Compose
 # =============================================================================
-# Orchestration des services API et Streamlit
+# Orchestration des services Backend (API, Streamlit), Frontend (React) et Database (PostgreSQL)
 #
 # Usage:
-#   docker-compose up -d          # Demarrer tous les services
-#   docker-compose up api         # Demarrer uniquement l'API
-#   docker-compose up streamlit   # Demarrer uniquement Streamlit
-#   docker-compose logs -f        # Voir les logs
-#   docker-compose down           # Arreter les services
+#   docker-compose up -d           # Démarrer tous les services
+#   docker-compose up api          # Démarrer uniquement l'API
+#   docker-compose up streamlit    # Démarrer uniquement Streamlit
+#   docker-compose up frontend     # Démarrer uniquement le frontend React
+#   docker-compose logs -f         # Voir les logs
+#   docker-compose down            # Arrêter les services
+#   docker-compose down -v         # Arrêter les services et supprimer les volumes
 #
-# Variables d'environnement requises (dans .env):
-#   - MISTRAL_API_KEY: Cle API Mistral (obligatoire)
-#   - REBUILD_API_KEY: Cle pour l'endpoint /rebuild (optionnel)
+# Variables d'environnement requises (dans .env à la racine):
+#   - MISTRAL_API_KEY: Clé API Mistral (obligatoire)
+#   - REBUILD_API_KEY: Clé pour l'endpoint /rebuild (optionnel)
+#   - POSTGRES_USER, POSTGRES_PASSWORD, POSTGRES_DB: Configuration PostgreSQL
 # =============================================================================
 
 services:
   # ===========================================================================
-  # API FastAPI
+  # PostgreSQL Database
+  # ===========================================================================
+  postgres:
+    image: postgres:16-alpine
+    container_name: rag-events-postgres
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER:-rag_user}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-changeme}
+      - POSTGRES_DB=${POSTGRES_DB:-rag_events}
+      - PGDATA=/var/lib/postgresql/data/pgdata
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-rag_user} -d ${POSTGRES_DB:-rag_events}"]
+      interval: 10s
+      timeout: 5s
+      start_period: 10s
+      retries: 5
+    restart: unless-stopped
+    networks:
+      - rag-network
+
+  # ===========================================================================
+  # pgAdmin (Interface d'administration PostgreSQL - Optionnel)
+  # ===========================================================================
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: rag-events-pgadmin
+    ports:
+      - "5050:80"
+    environment:
+      - PGADMIN_DEFAULT_EMAIL=${PGADMIN_DEFAULT_EMAIL:-admin@rag-events.local}
+      - PGADMIN_DEFAULT_PASSWORD=${PGADMIN_DEFAULT_PASSWORD:-admin}
+      - PGADMIN_CONFIG_SERVER_MODE=False
+      - PGADMIN_CONFIG_MASTER_PASSWORD_REQUIRED=False
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - rag-network
+    profiles:
+      - admin
+  # ===========================================================================
+  # API FastAPI (Backend Python)
   # ===========================================================================
   api:
     build:
-      context: .
+      context: ./backend
+      dockerfile: Dockerfile
       target: production
     container_name: rag-events-api
     ports:
@@ -30,12 +82,22 @@ services:
       - MISTRAL_API_KEY=${MISTRAL_API_KEY}
       - REBUILD_API_KEY=${REBUILD_API_KEY:-}
       - LOG_LEVEL=${LOG_LEVEL:-INFO}
-      - EMBEDDING_PROVIDER=${EMBEDDING_PROVIDER:-mistral}
       - LLM_MODEL=${LLM_MODEL:-mistral-small-latest}
       - LLM_TEMPERATURE=${LLM_TEMPERATURE:-0.7}
       - TOP_K_RESULTS=${TOP_K_RESULTS:-5}
+      - CORS_ORIGINS=http://localhost:3000,http://localhost:5173,http://localhost:8501
+      # PostgreSQL Configuration
+      - POSTGRES_HOST=${POSTGRES_HOST:-postgres}
+      - POSTGRES_PORT=${POSTGRES_PORT:-5432}
+      - POSTGRES_USER=${POSTGRES_USER:-rag_user}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-changeme}
+      - POSTGRES_DB=${POSTGRES_DB:-rag_events}
+      - DATABASE_URL=postgresql+asyncpg://${POSTGRES_USER:-rag_user}:${POSTGRES_PASSWORD:-changeme}@${POSTGRES_HOST:-postgres}:${POSTGRES_PORT:-5432}/${POSTGRES_DB:-rag_events}
     volumes:
-      - ./data:/app/data
+      - ./backend/data:/app/data
+    depends_on:
+      postgres:
+        condition: service_healthy
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
       interval: 30s
@@ -47,11 +109,12 @@ services:
       - rag-network
 
   # ===========================================================================
-  # Interface Streamlit
+  # Interface Streamlit (Backend Python - Alternative UI)
   # ===========================================================================
   streamlit:
     build:
-      context: .
+      context: ./backend
+      dockerfile: Dockerfile
       target: production
     container_name: rag-events-streamlit
     command: ["streamlit"]
@@ -59,12 +122,30 @@ services:
       - "8501:8501"
     environment:
       - MISTRAL_API_KEY=${MISTRAL_API_KEY}
-      - EMBEDDING_PROVIDER=${EMBEDDING_PROVIDER:-mistral}
       - LLM_MODEL=${LLM_MODEL:-mistral-small-latest}
       - LLM_TEMPERATURE=${LLM_TEMPERATURE:-0.7}
       - TOP_K_RESULTS=${TOP_K_RESULTS:-5}
     volumes:
-      - ./data:/app/data
+      - ./backend/data:/app/data
+    depends_on:
+      api:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - rag-network
+
+  # ===========================================================================
+  # Frontend React (Node.js)
+  # ===========================================================================
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: rag-events-frontend
+    ports:
+      - "5173:5173"
+    environment:
+      - VITE_API_URL=http://localhost:8000
     depends_on:
       api:
         condition: service_healthy
@@ -76,9 +157,16 @@ networks:
   rag-network:
     driver: bridge
 
+volumes:
+  postgres_data:
+    driver: local
+  pgadmin_data:
+    driver: local
+
 # =============================================================================
-# Volumes (optionnel, pour persistance explicite)
+# Profiles pour démarrage sélectif
 # =============================================================================
-# volumes:
-#   data-volume:
-#     driver: local
+# docker-compose up                        # Services essentiels (api, frontend, postgres)
+# docker-compose --profile admin up        # Tous les services + pgAdmin
+# docker-compose up api frontend postgres  # API + Frontend + Database (sans Streamlit)
+# docker-compose up streamlit postgres     # Streamlit + Database (sans API/Frontend)

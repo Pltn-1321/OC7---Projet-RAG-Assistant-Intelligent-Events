@@ -1,0 +1,52 @@
+# =============================================================================
+# Render Blueprint - Backend Deployment
+# =============================================================================
+# Fichier de configuration Infrastructure as Code pour Render
+#
+# Déploiement:
+#   1. Connecter le repo GitHub à Render
+#   2. Render détecte automatiquement ce fichier
+#   3. Configurer les variables d'environnement dans le dashboard
+#
+# Documentation: https://render.com/docs/blueprint-spec
+# =============================================================================
+
+services:
+  # ===========================================================================
+  # API FastAPI
+  # ===========================================================================
+  - type: web
+    name: rag-events-api
+    runtime: docker
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: ./backend
+
+    # Plan gratuit
+    plan: free
+
+    # Région (choisir la plus proche)
+    region: frankfurt  # ou oregon, singapore, ohio
+
+    # Health check
+    healthCheckPath: /health
+
+    # Variables d'environnement (à configurer dans le dashboard)
+    envVars:
+      - key: MISTRAL_API_KEY
+        sync: false  # À configurer manuellement (secret)
+      - key: EMBEDDING_PROVIDER
+        value: mistral
+      - key: LLM_MODEL
+        value: mistral-small-latest
+      - key: LLM_TEMPERATURE
+        value: "0.7"
+      - key: TOP_K_RESULTS
+        value: "5"
+      - key: LOG_LEVEL
+        value: INFO
+
+    # Disque persistant pour l'index FAISS (optionnel, payant)
+    # disk:
+    #   name: faiss-index
+    #   mountPath: /app/data
+    #   sizeGB: 1

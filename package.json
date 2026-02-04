@@ -1,0 +1,24 @@
+{
+  "name": "rag-events-monorepo",
+  "version": "1.0.0",
+  "description": "RAG Assistant for Cultural Events - Monorepo",
+  "private": true,
+  "scripts": {
+    "dev": "concurrently -k -n API,FRONT -c blue,green \"npm run dev:api\" \"npm run dev:front\"",
+    "dev:api": "cd backend && .venv/bin/python -m uvicorn src.api.main:app --reload --host 0.0.0.0 --port 8000",
+    "dev:front": "cd frontend && npm run dev",
+    "build": "cd frontend && npm run build",
+    "setup": "npm run setup:backend && npm run setup:frontend",
+    "setup:backend": "cd backend && uv sync --all-extras",
+    "setup:frontend": "cd frontend && npm install",
+    "docker:up": "docker-compose up -d",
+    "docker:down": "docker-compose down",
+    "docker:logs": "docker-compose logs -f"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
