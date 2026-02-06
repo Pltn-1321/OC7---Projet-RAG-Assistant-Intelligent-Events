@@ -54,8 +54,8 @@ export function MessageList({ messages, autoScroll = true }: MessageListProps) {
             <div
               className={`max-w-[80%] rounded-lg p-4 ${
                 message.role === 'user'
-                  ? 'bg-mediterranean-azure text-white'
-                  : 'bg-mediterranean-sky/50 border'
+                  ? 'bg-primary text-primary-foreground'
+                  : 'bg-secondary/40 border'
               }`}
             >
               {/* Message header */}
@@ -74,7 +74,7 @@ export function MessageList({ messages, autoScroll = true }: MessageListProps) {
               {/* Message content */}
               <div
                 className={`text-sm leading-relaxed whitespace-pre-wrap ${
-                  message.role === 'user' ? 'text-white' : 'text-foreground'
+                  message.role === 'user' ? 'text-primary-foreground' : 'text-foreground'
                 }`}
               >
                 {message.content}

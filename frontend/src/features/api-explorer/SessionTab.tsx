@@ -35,7 +35,7 @@ export function SessionTab() {
   const getHistoryMutation = useMutation({
     mutationFn: (sessionId: string) => api.chat.getSession(sessionId),
     onSuccess: (data) => {
-      setSessionHistory(data)
+      setSessionHistory(data.history)
       setDeleteMessage(null)
     },
     onError: () => {

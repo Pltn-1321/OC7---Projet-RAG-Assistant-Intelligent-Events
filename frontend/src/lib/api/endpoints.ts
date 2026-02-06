@@ -5,7 +5,7 @@ import type {
   SearchResponse,
   ChatRequest,
   ChatResponse,
-  Message,
+  SessionResponse,
   RebuildResponse,
   RebuildStatusResponse,
   EvaluationRequest,
@@ -36,8 +36,8 @@ export const chatApi = {
     return data
   },
 
-  getSession: async (sessionId: string): Promise<Message[]> => {
-    const { data } = await apiClient.get<Message[]>(`/session/${sessionId}`)
+  getSession: async (sessionId: string): Promise<SessionResponse> => {
+    const { data } = await apiClient.get<SessionResponse>(`/session/${sessionId}`)
     return data
   },
 

@@ -20,8 +20,8 @@ export function IndexManagementView() {
       {/* Header */}
       <div className="mb-6">
         <div className="flex items-center gap-3 mb-2">
-          <div className="p-2 rounded-lg bg-mediterranean-azure/20">
-            <Database className="h-6 w-6 text-mediterranean-turquoise" />
+          <div className="p-2 rounded-lg bg-primary/10">
+            <Database className="h-6 w-6 text-primary" />
           </div>
           <div>
             <h2 className="text-2xl font-semibold text-foreground">

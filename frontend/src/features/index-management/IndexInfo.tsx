@@ -16,6 +16,7 @@ import {
   Cpu,
   RefreshCw,
   AlertCircle,
+  Users,
 } from 'lucide-react'
 
 export function IndexInfo() {
@@ -28,35 +29,34 @@ export function IndexInfo() {
   } = useQuery({
     queryKey: ['health'],
     queryFn: () => api.health.check(),
-    staleTime: 30000, // Cache for 30 seconds
+    staleTime: 30000,
     retry: 1,
   })
 
   if (error) {
     return (
-      <Card className="border-red-500/30 bg-red-950/20">
+      <Card className="border-destructive/30">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-red-400">
+          <CardTitle className="flex items-center gap-2 text-destructive text-lg">
             <AlertCircle className="h-5 w-5" />
             Erreur de connexion
           </CardTitle>
-          <CardDescription className="text-red-300/70">
-            Impossible de recuperer les informations de l'index
+          <CardDescription>
+            Impossible de récupérer les informations de l'index
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <p className="text-sm text-red-300/80 mb-4">
-            {getErrorMessage(error, "L'API backend est peut-etre inaccessible.")}
+          <p className="text-sm text-muted-foreground mb-4">
+            {getErrorMessage(error, "L'API backend est peut-être inaccessible.")}
           </p>
           <Button
             variant="outline"
             size="sm"
             onClick={() => refetch()}
             disabled={isFetching}
-            className="border-red-500/30 hover:bg-red-950/30"
           >
             <RefreshCw className={`h-4 w-4 mr-2 ${isFetching ? 'animate-spin' : ''}`} />
-            Reessayer
+            Réessayer
           </Button>
         </CardContent>
       </Card>
@@ -67,23 +67,31 @@ export function IndexInfo() {
     <Card>
       <CardHeader>
         <div className="flex items-center justify-between">
-          <div>
-            <CardTitle className="flex items-center gap-2">
-              <Database className="h-5 w-5 text-mediterranean-azure" />
+          <div className="space-y-1">
+            <CardTitle className="flex items-center gap-2 text-lg">
+              <Database className="h-5 w-5 text-primary" />
               Index FAISS Actuel
             </CardTitle>
             <CardDescription>
               Informations sur l'index vectoriel en production
             </CardDescription>
           </div>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => refetch()}
-            disabled={isFetching}
-          >
-            <RefreshCw className={`h-4 w-4 ${isFetching ? 'animate-spin' : ''}`} />
-          </Button>
+          <div className="flex items-center gap-3">
+            {health && (
+              <Badge variant={health.status === 'healthy' ? 'success' : 'destructive'}>
+                {health.status === 'healthy' ? 'Opérationnel' : 'Dégradé'}
+              </Badge>
+            )}
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => refetch()}
+              disabled={isFetching}
+              className="h-8 w-8"
+            >
+              <RefreshCw className={`h-4 w-4 ${isFetching ? 'animate-spin' : ''}`} />
+            </Button>
+          </div>
         </div>
       </CardHeader>
       <CardContent>
@@ -91,71 +99,42 @@ export function IndexInfo() {
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             {[1, 2, 3].map((i) => (
               <div key={i} className="p-4 rounded-lg bg-muted animate-pulse">
-                <div className="h-4 w-20 bg-muted-foreground/20 rounded mb-2" />
-                <div className="h-8 w-16 bg-muted-foreground/20 rounded" />
+                <div className="h-3 w-20 bg-muted-foreground/20 rounded mb-3" />
+                <div className="h-7 w-16 bg-muted-foreground/20 rounded mb-2" />
+                <div className="h-3 w-24 bg-muted-foreground/20 rounded" />
               </div>
             ))}
           </div>
         ) : health ? (
           <div className="space-y-4">
-            {/* Status Badge */}
-            <div className="flex items-center gap-2">
-              <span className="text-sm text-muted-foreground">Statut:</span>
-              <Badge
-                variant={health.status === 'healthy' ? 'success' : 'destructive'}
-              >
-                {health.status === 'healthy' ? 'Operationnel' : 'Degraded'}
-              </Badge>
-            </div>
-
             {/* Stats Grid */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              {/* Document Count */}
-              <div className="p-4 rounded-lg bg-mediterranean-navy/30 border border-mediterranean-azure/20">
-                <div className="flex items-center gap-2 text-muted-foreground text-sm mb-1">
-                  <Layers className="h-4 w-4 text-mediterranean-turquoise" />
-                  Documents
-                </div>
-                <p className="text-2xl font-bold text-mediterranean-sky">
-                  {(health.document_count ?? 0).toLocaleString()}
-                </p>
-                <p className="text-xs text-muted-foreground mt-1">
-                  evenements indexes
-                </p>
-              </div>
-
-              {/* Embedding Dimension */}
-              <div className="p-4 rounded-lg bg-mediterranean-navy/30 border border-mediterranean-azure/20">
-                <div className="flex items-center gap-2 text-muted-foreground text-sm mb-1">
-                  <Cpu className="h-4 w-4 text-mediterranean-ochre" />
-                  Dimensions
-                </div>
-                <p className="text-2xl font-bold text-mediterranean-sky">
-                  {health.embedding_dimension ?? 1024}
-                </p>
-                <p className="text-xs text-muted-foreground mt-1">
-                  Mistral Embeddings
-                </p>
-              </div>
-
-              {/* Active Sessions */}
-              <div className="p-4 rounded-lg bg-mediterranean-navy/30 border border-mediterranean-azure/20">
-                <div className="flex items-center gap-2 text-muted-foreground text-sm mb-1">
-                  <Database className="h-4 w-4 text-mediterranean-terracotta" />
-                  Sessions
-                </div>
-                <p className="text-2xl font-bold text-mediterranean-sky">
-                  {health.active_sessions ?? 0}
-                </p>
-                <p className="text-xs text-muted-foreground mt-1">
-                  sessions actives
-                </p>
-              </div>
+              <StatCard
+                icon={<Layers className="h-4 w-4" />}
+                iconColor="text-primary"
+                label="Documents"
+                value={(health.document_count ?? 0).toLocaleString()}
+                detail="événements indexés"
+              />
+              <StatCard
+                icon={<Cpu className="h-4 w-4" />}
+                iconColor="text-accent"
+                label="Dimensions"
+                value={String(health.embedding_dimension ?? 1024)}
+                detail="Mistral Embeddings"
+              />
+              <StatCard
+                icon={<Users className="h-4 w-4" />}
+                iconColor="text-destructive"
+                label="Sessions"
+                value={String(health.active_sessions ?? 0)}
+                detail="sessions actives"
+              />
             </div>
 
             {/* Provider Info */}
-            <div className="flex items-center gap-2 pt-2 border-t border-border/50">
-              <span className="text-xs text-muted-foreground">Fournisseur d'embeddings:</span>
+            <div className="flex items-center gap-2 pt-3 border-t">
+              <span className="text-xs text-muted-foreground">Fournisseur d'embeddings :</span>
               <Badge variant="outline" className="text-xs">
                 mistral-embed
               </Badge>
@@ -164,5 +143,30 @@ export function IndexInfo() {
         ) : null}
       </CardContent>
     </Card>
+  )
+}
+
+function StatCard({
+  icon,
+  iconColor,
+  label,
+  value,
+  detail,
+}: {
+  icon: React.ReactNode
+  iconColor: string
+  label: string
+  value: string
+  detail: string
+}) {
+  return (
+    <div className="rounded-lg border bg-muted/30 p-4">
+      <div className="flex items-center gap-2 text-sm text-muted-foreground mb-1">
+        <span className={iconColor}>{icon}</span>
+        {label}
+      </div>
+      <p className="text-2xl font-bold text-foreground">{value}</p>
+      <p className="text-xs text-muted-foreground mt-1">{detail}</p>
+    </div>
   )
 }

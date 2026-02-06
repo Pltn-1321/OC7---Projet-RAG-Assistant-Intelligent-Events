@@ -1,38 +1,49 @@
 @import "tailwindcss";
 @config "../tailwind.config.js";
 
+@theme {
+  --color-background: rgb(244 232 216);
+  --color-foreground: rgb(10 47 81);
+
+  --color-card: rgb(255 255 255);
+  --color-card-foreground: rgb(10 47 81);
+
+  --color-popover: rgb(255 255 255);
+  --color-popover-foreground: rgb(10 47 81);
+
+  --color-primary: rgb(14 124 123);
+  --color-primary-foreground: rgb(244 232 216);
+
+  --color-secondary: rgb(155 222 223);
+  --color-secondary-foreground: rgb(10 47 81);
+
+  --color-muted: rgb(240 240 240);
+  --color-muted-foreground: rgb(100 116 139);
+
+  --color-accent: rgb(244 162 97);
+  --color-accent-foreground: rgb(10 47 81);
+
+  --color-destructive: rgb(231 111 81);
+  --color-destructive-foreground: rgb(255 255 255);
+
+  --color-border: rgb(226 232 240);
+  --color-input: rgb(226 232 240);
+  --color-ring: rgb(14 124 123);
+
+  --radius-sm: calc(0.5rem - 4px);
+  --radius-md: calc(0.5rem - 2px);
+  --radius-lg: 0.5rem;
+}
+
 @layer base {
   #root {
     width: 100%;
     min-height: 100vh;
   }
 
-  :root {
-    --background: 244 232 216; /* sand */
-    --foreground: 10 47 81;    /* navy */
-    --card: 255 255 255;
-    --card-foreground: 10 47 81;
-    --popover: 255 255 255;
-    --popover-foreground: 10 47 81;
-    --primary: 14 124 123;     /* azure */
-    --primary-foreground: 244 232 216;
-    --secondary: 155 222 223;  /* sky */
-    --secondary-foreground: 10 47 81;
-    --muted: 240 240 240;
-    --muted-foreground: 100 116 139;
-    --accent: 244 162 97;      /* ochre */
-    --accent-foreground: 10 47 81;
-    --destructive: 231 111 81; /* terracotta */
-    --destructive-foreground: 255 255 255;
-    --border: 226 232 240;
-    --input: 226 232 240;
-    --ring: 14 124 123;
-    --radius: 0.5rem;
-  }
-
   body {
-    background-color: rgb(var(--background));
-    color: rgb(var(--foreground));
+    background-color: var(--color-background);
+    color: var(--color-foreground);
     font-family: Inter, system-ui, sans-serif;
     margin: 0;
     min-height: 100vh;

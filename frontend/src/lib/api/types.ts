@@ -66,9 +66,11 @@ export interface Message {
   content: string
 }
 
-export interface SessionHistory {
+export interface SessionResponse {
   session_id: string
-  messages: Message[]
+  history: Message[]
+  created_at: string
+  updated_at: string
 }
 
 // Health Check
